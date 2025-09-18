@@ -4,25 +4,34 @@ import os
 import pyautogui
 import pytesseract
 from pytesseract import Output
-from PIL import Image, ImageDraw
-import win32gui
-import win32con
+from PIL import ImageDraw
+import sys
+import customtkinter as CTK
 
 from process_finder import CubaseProcessFinder
 from window_manager import WindowManager
 
-# đường dẫn tesseract
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+if hasattr(sys, "_MEIPASS"):  # khi chạy từ PyInstaller .exe
+    base_path = sys._MEIPASS
+    tess_path = os.path.join(base_path, "tesseract.exe")
+    tessdata_dir = os.path.join(base_path, "tessdata")
+else:  # khi chạy trong venv
+    tess_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    tessdata_dir = r"C:\Program Files\Tesseract-OCR\tessdata"
+
+pytesseract.pytesseract.tesseract_cmd = tess_path
+os.environ["TESSDATA_PREFIX"] = tessdata_dir
+
 
 RESULT_DIR = "result"
 
 class CubaseAutoToolGUI:
     def __init__(self):
-        self.root = tk.Tk()
+        self.root = CTK.CTk()
         self.root.title("Cubase Auto Tools")
         self.root.geometry("300x200")
 
-        btn_tone = tk.Button(
+        btn_tone = CTK.CTkButton(
             self.root,
             text="Dò Tone",
             font=("Arial", 12),

@@ -1,11 +1,14 @@
+import re
 import time
 import threading
+
 import pyautogui
+
+import config
 from features.base_feature import BaseFeature
+from utils.helpers import OCRHelper, ImageHelper, MessageHelper, MouseHelper
 from utils.process_finder import CubaseProcessFinder
 from utils.window_manager import WindowManager
-from utils.helpers import OCRHelper, ImageHelper, MessageHelper, MouseHelper
-import config
 
 
 class ToneDetector(BaseFeature):
@@ -30,15 +33,30 @@ class ToneDetector(BaseFeature):
         """Cho phép auto-detect tiếp tục sau khi chức năng khác hoàn thành."""
         self._manual_active = False
         print("▶️ Auto-detect có thể tiếp tục")
-        
-        # Auto detect variables
-        self.auto_detect_active = False
-        self.auto_detect_thread = None
-        self.tone_callback = None
-        self.current_tone_getter = None
 
     def get_name(self):
         return "Dò Tone"
+    
+    def _calculate_crop_box(self, win_w, win_h):
+        """Tính toán crop box với margin ratio từ config."""
+        margin_ratio = config.CROP_MARGIN_RATIO
+        return (
+            win_w // margin_ratio,              # x1
+            win_h // margin_ratio,              # y1  
+            win_w * (margin_ratio - 1) // margin_ratio,  # x2
+            win_h * (margin_ratio - 1) // margin_ratio   # y2
+        )
+    
+    def _screenshot_and_crop_plugin(self, plugin_win):
+        """Screenshot plugin window và crop theo margin."""
+        left, top, right, bottom = plugin_win.left, plugin_win.top, plugin_win.right, plugin_win.bottom
+        full = pyautogui.screenshot(region=(left, top, right - left, bottom - top))
+        
+        win_w, win_h = right - left, bottom - top
+        crop_box = self._calculate_crop_box(win_w, win_h)
+        cropped = full.crop(crop_box)
+        
+        return cropped, (left, top, crop_box)
 
     def execute(self, tone_callback=None):
         """Thực thi tính năng dò tone."""
@@ -101,20 +119,8 @@ class ToneDetector(BaseFeature):
 
     def _process_plugin_window(self, plugin_win):
         """Xử lý cửa sổ plugin."""
-        # Screenshot
-        left, top, right, bottom = plugin_win.left, plugin_win.top, plugin_win.right, plugin_win.bottom
-        full = pyautogui.screenshot(
-            region=(left, top, right - left, bottom - top))
-
-        # Crop
-        win_w, win_h = right - left, bottom - top
-        crop_box = (
-            win_w // 6,          # x1 (bỏ 1/6 bên trái)
-            win_h // 6,          # y1 (bỏ 1/6 trên)
-            win_w * 5 // 6,      # x2 (bỏ 1/6 bên phải)
-            win_h * 5 // 6       # y2 (bỏ 1/6 dưới)
-        )
-        cropped = full.crop(crop_box)
+        # Screenshot và crop
+        cropped, (left, top, crop_box) = self._screenshot_and_crop_plugin(plugin_win)
 
         # OCR
         data_crop = OCRHelper.extract_text_data(cropped)
@@ -212,12 +218,7 @@ class ToneDetector(BaseFeature):
                 
                 # Crop
                 win_w, win_h = right - left, bottom - top
-                crop_box = (
-                    win_w // 6,          # x1 (bỏ 1/6 bên trái)
-                    win_h // 6,          # y1 (bỏ 1/6 trên)
-                    win_w * 5 // 6,      # x2 (bỏ 1/6 bên phải)
-                    win_h * 5 // 6       # y2 (bỏ 1/6 dưới)
-                )
+                crop_box = self._calculate_crop_box(win_w, win_h)
                 cropped = full.crop(crop_box)
                 
                 # OCR
@@ -302,7 +303,6 @@ class ToneDetector(BaseFeature):
                         word_clean = word.strip()
                         
                         # Làm sạch ký tự đặc biệt aggressive hơn
-                        import re
                         word_cleaned = re.sub(r"[^A-Za-z#b]", "", word_clean)  # Chỉ giữ chữ cái, # và b
                         
                         # Kiểm tra note (giữ nguyên format gốc)
@@ -350,20 +350,20 @@ class ToneDetector(BaseFeature):
         
         self.auto_detect_active = False
         if self.auto_detect_thread:
-            self.auto_detect_thread.join(timeout=2.0)  # Đợi tối đa 2 giây
+            self.auto_detect_thread.join(timeout=config.THREAD_JOIN_TIMEOUT)
         
         print("⏹️ Auto detect stopped")
     
     def _auto_detect_loop(self):
         """Loop chính của auto detect."""
-        check_interval = 2.0  # Kiểm tra mỗi 2 giây
+        check_interval = config.AUTO_DETECT_INTERVAL
         
         while self.auto_detect_active:
             try:
                 # Kiểm tra manual operation trước
                 if self._manual_active:
                     print("🎯 Manual operation đang chạy - auto tạm dừng...")
-                    time.sleep(0.5)  # Đợi ngắn hơn để responsive
+                    time.sleep(config.AUTO_DETECT_RESPONSIVE_DELAY)
                     continue
                 
                 # Kiểm tra xem có thể lấy lock không
@@ -419,12 +419,7 @@ class ToneDetector(BaseFeature):
             
             # Crop
             win_w, win_h = right - left, bottom - top
-            crop_box = (
-                win_w // 6,          # x1 (bỏ 1/6 bên trái)
-                win_h // 6,          # y1 (bỏ 1/6 trên)
-                win_w * 5 // 6,      # x2 (bỏ 1/6 bên phải)
-                win_h * 5 // 6       # y2 (bỏ 1/6 dưới)
-            )
+            crop_box = self._calculate_crop_box(win_w, win_h)
             cropped = full.crop(crop_box)
             
             # OCR
@@ -453,12 +448,7 @@ class ToneDetector(BaseFeature):
             
             # Crop
             win_w, win_h = right - left, bottom - top
-            crop_box = (
-                win_w // 6,          # x1 (bỏ 1/6 bên trái)
-                win_h // 6,          # y1 (bỏ 1/6 trên)
-                win_w * 5 // 6,      # x2 (bỏ 1/6 bên phải)
-                win_h * 5 // 6       # y2 (bỏ 1/6 dưới)
-            )
+            crop_box = self._calculate_crop_box(win_w, win_h)
             cropped = full.crop(crop_box)
             
             # OCR
@@ -467,7 +457,10 @@ class ToneDetector(BaseFeature):
             # Đợi nếu đang Listening (timeout ngắn hơn cho auto mode)
             if self._is_listening(data_crop):
                 print("🎧 Auto mode: Plugin đang Listening... Đợi...")
-                if not self._wait_for_listening_complete(max_wait_time=10, check_interval=0.5):
+                if not self._wait_for_listening_complete(
+                    max_wait_time=config.AUTO_DETECT_TIMEOUT_SHORT, 
+                    check_interval=config.AUTO_DETECT_RESPONSIVE_DELAY
+                ):
                     print("⏰ Auto mode timeout - bỏ qua lần này")
                     return False
             

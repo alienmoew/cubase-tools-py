@@ -1,6 +1,6 @@
 import customtkinter as CTK
+
 from features.tone_detector import ToneDetector
-from utils.auto_pause_decorator import pause_auto_on_manual
 
 class CubaseAutoToolGUI:
     """GUI chính của ứng dụng."""

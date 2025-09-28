@@ -88,13 +88,8 @@ class MessageHelper:
     
     @staticmethod
     def show_success(title, message):
-        """Hiển thị popup thành công."""
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        
-        messagebox.showinfo(title, message)
-        root.destroy()
+        """Hiển thị popup thành công (alias cho show_info)."""
+        MessageHelper.show_info(title, message)
 
 class MouseHelper:
     """Helper class cho các thao tác chuột an toàn."""

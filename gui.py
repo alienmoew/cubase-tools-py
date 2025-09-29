@@ -113,10 +113,17 @@ class CubaseAutoToolGUI:
         
         # Load saved auto-detect state
         saved_auto_detect = self.settings_manager.get_auto_detect()
+        
         if saved_auto_detect:
             self.auto_detect_switch.select()
         
         self.auto_detect_switch.pack(side="left")
+        
+        # Auto-start if previously enabled
+        if saved_auto_detect:
+            print("� Auto-detect đã được bật từ lần trước")
+            # Use after_idle to ensure UI is fully initialized
+            self.root.after_idle(lambda: self._start_auto_detect_from_saved_state())
         
         # Tone Detector Button
         btn_tone = CTK.CTkButton(
@@ -313,6 +320,16 @@ class CubaseAutoToolGUI:
             self.theme_button.configure(text=icon)
         
         print(f"🎨 Theme switched to: {new_theme}")
+    
+    def _start_auto_detect_from_saved_state(self):
+        """Khởi động auto-detect từ trạng thái đã lưu."""
+        try:
+            self.tone_detector.start_auto_detect(
+                tone_callback=self.update_current_tone,
+                current_tone_getter=lambda: self.current_detected_tone
+            )
+        except Exception as e:
+            print(f"❌ Lỗi khởi động auto-detect: {e}")
     
     def _example_music_feature(self):
         """Example chức năng để demo auto-pause system."""

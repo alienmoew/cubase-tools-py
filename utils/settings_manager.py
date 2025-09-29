@@ -34,7 +34,6 @@ class SettingsManager:
         try:
             with open(self.settings_file, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, indent=2, ensure_ascii=False)
-            print(f"💾 Settings saved: {settings}")
         except Exception as e:
             print(f"⚠️ Error saving settings: {e}")
     
@@ -52,10 +51,12 @@ class SettingsManager:
     def get_auto_detect(self):
         """Lấy trạng thái auto detect."""
         settings = self.load_settings()
-        return settings.get("auto_detect", False)
+        auto_detect_value = settings.get("auto_detect", False)
+        # Handle both boolean and numeric values for backward compatibility
+        return bool(auto_detect_value)
     
     def set_auto_detect(self, enabled):
         """Lưu trạng thái auto detect."""
         settings = self.load_settings()
-        settings["auto_detect"] = enabled
+        settings["auto_detect"] = bool(enabled)  # Ensure boolean type
         self.save_settings(settings)

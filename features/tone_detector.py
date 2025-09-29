@@ -27,12 +27,10 @@ class ToneDetector(BaseFeature):
     def pause_auto_detect(self):
         """Tạm dừng auto-detect cho các chức năng khác."""
         self._manual_active = True
-        print("⏸️ Auto-detect bị tạm dừng bởi chức năng khác")
     
     def resume_auto_detect(self):
         """Cho phép auto-detect tiếp tục sau khi chức năng khác hoàn thành."""
         self._manual_active = False
-        print("▶️ Auto-detect có thể tiếp tục")
 
     def get_name(self):
         return "Dò Tone"
@@ -62,7 +60,6 @@ class ToneDetector(BaseFeature):
         """Thực thi tính năng dò tone."""
         # Set flag cho manual operation và đợi auto release lock
         self._manual_active = True
-        print("🎯 Manual operation started - Auto sẽ tạm dừng...")
         
         # Đợi để lấy lock (blocking=True để đợi)
         self._detection_lock.acquire()
@@ -114,7 +111,6 @@ class ToneDetector(BaseFeature):
         # Reset flag và release lock
         self._manual_active = False
         self._detection_lock.release()
-        print("✅ Manual operation hoàn thành - Auto có thể tiếp tục")
         return success
 
     def _process_plugin_window(self, plugin_win):
@@ -330,7 +326,6 @@ class ToneDetector(BaseFeature):
     def start_auto_detect(self, tone_callback=None, current_tone_getter=None):
         """Bắt đầu auto detect tone."""
         if self.auto_detect_active:
-            print("⚠️ Auto detect đã đang chạy")
             return
         
         self.tone_callback = tone_callback
@@ -341,7 +336,7 @@ class ToneDetector(BaseFeature):
         self.auto_detect_thread = threading.Thread(target=self._auto_detect_loop, daemon=True)
         self.auto_detect_thread.start()
         
-        print("🔄 Auto detect started")
+        print("✅ Auto detect bắt đầu hoạt động")
     
     def stop_auto_detect(self):
         """Dừng auto detect tone."""
@@ -352,7 +347,7 @@ class ToneDetector(BaseFeature):
         if self.auto_detect_thread:
             self.auto_detect_thread.join(timeout=config.THREAD_JOIN_TIMEOUT)
         
-        print("⏹️ Auto detect stopped")
+        print("⏹️ Auto detect đã dừng")
     
     def _auto_detect_loop(self):
         """Loop chính của auto detect."""
@@ -362,13 +357,11 @@ class ToneDetector(BaseFeature):
             try:
                 # Kiểm tra manual operation trước
                 if self._manual_active:
-                    print("🎯 Manual operation đang chạy - auto tạm dừng...")
                     time.sleep(config.AUTO_DETECT_RESPONSIVE_DELAY)
                     continue
                 
                 # Kiểm tra xem có thể lấy lock không
                 if not self._detection_lock.acquire(blocking=False):
-                    print("⏳ Đang có detection khác, auto-detect đợi...")
                     time.sleep(check_interval)
                     continue
                 
@@ -384,7 +377,7 @@ class ToneDetector(BaseFeature):
                         
                         # So sánh tone
                         if new_tone != current_app_tone:
-                            print(f"🔄 Tone changed: {current_app_tone} → {new_tone}")
+                            print(f"🔄 Phát hiện tone mới: {current_app_tone} → {new_tone}")
                             
                             # Cập nhật UI
                             if self.tone_callback:

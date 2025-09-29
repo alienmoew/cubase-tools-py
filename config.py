@@ -13,6 +13,7 @@ else:  # Development
 # Directories
 RESULT_DIR = "result"
 DATA_DIR = "data"
+SETTINGS_FILE = "settings.json"
 
 # OCR Config
 OCR_CONFIG = r"--oem 3 --psm 6"
@@ -31,3 +32,12 @@ THREAD_JOIN_TIMEOUT = 2.0
 # Auto-detect settings  
 AUTO_DETECT_RESPONSIVE_DELAY = 0.5
 AUTO_DETECT_TIMEOUT_SHORT = 10
+
+# GUI Theme settings
+GUI_THEMES = ["dark", "light"]
+DEFAULT_THEME = "dark"
+
+# App Information
+APP_NAME = "Cubase Auto Tools"
+APP_VERSION = "v1.0"
+COPYRIGHT = "© KT STUDIO - 0948999892"

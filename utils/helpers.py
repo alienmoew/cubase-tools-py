@@ -48,6 +48,12 @@ class ImageHelper:
         path = os.path.join(config.RESULT_DIR, filename)
         pil_img.save(path)
         return path
+    
+    @staticmethod
+    def get_result_path(filename):
+        """Lấy đường dẫn file trong thư mục result."""
+        os.makedirs(config.RESULT_DIR, exist_ok=True)
+        return os.path.join(config.RESULT_DIR, filename)
 
 class MessageHelper:
     """Helper class cho các thông báo popup."""
@@ -90,6 +96,52 @@ class MessageHelper:
     def show_success(title, message):
         """Hiển thị popup thành công (alias cho show_info)."""
         MessageHelper.show_info(title, message)
+
+class ConfigHelper:
+    """Helper class để đọc file cấu hình giá trị mặc định."""
+    
+    @staticmethod
+    def load_default_values(config_file="default_values.txt"):
+        """Đọc giá trị mặc định từ file cấu hình."""
+        defaults = {}
+        try:
+            # Đường dẫn tới file config
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), config_file)
+            
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        # Bỏ qua dòng comment và dòng trống
+                        if not line or line.startswith('#'):
+                            continue
+                        
+                        # Parse key=value
+                        if '=' in line:
+                            key, value = line.split('=', 1)
+                            key = key.strip()
+                            value = value.strip()
+                            
+                            # Chuyển đổi sang số nếu có thể
+                            try:
+                                if '.' in value:
+                                    defaults[key] = float(value)
+                                else:
+                                    defaults[key] = int(value)
+                            except ValueError:
+                                defaults[key] = value
+                                
+            return defaults
+        except Exception as e:
+            print(f"❌ Lỗi đọc file cấu hình: {e}")
+            # Trả về giá trị mặc định backup
+            return {
+                'transpose_default': 0, 'transpose_min': -12, 'transpose_max': 12,
+                'return_speed_default': 200, 'return_speed_min': 0, 'return_speed_max': 400,
+                'flex_tune_default': 0, 'flex_tune_min': 0, 'flex_tune_max': 100,
+                'natural_vibrato_default': 0, 'natural_vibrato_min': -12, 'natural_vibrato_max': 12,
+                'humanize_default': 0, 'humanize_min': 0, 'humanize_max': 100
+            }
 
 class MouseHelper:
     """Helper class cho các thao tác chuột an toàn."""

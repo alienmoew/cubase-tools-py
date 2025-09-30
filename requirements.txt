@@ -5,4 +5,6 @@ psutil
 pygetwindow
 pywin32
 customtkinter
+opencv-python
+numpy
 

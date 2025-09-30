@@ -33,6 +33,11 @@ THREAD_JOIN_TIMEOUT = 2.0
 AUTO_DETECT_RESPONSIVE_DELAY = 0.5
 AUTO_DETECT_TIMEOUT_SHORT = 10
 
+# Template matching settings
+TEMPLATE_MATCH_THRESHOLD = 0.7
+VALUE_CLICK_OFFSET_X_RATIO = 0.5  # 50% from left (center horizontally)
+VALUE_CLICK_OFFSET_Y_RATIO = 0.6  # 60% from top (slightly below center)
+
 # GUI Theme settings
 GUI_THEMES = ["dark", "light"]
 DEFAULT_THEME = "dark"

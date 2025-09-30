@@ -7,6 +7,8 @@ from features.return_speed_detector import ReturnSpeedDetector
 from features.flex_tune_detector import FlexTuneDetector
 from features.natural_vibrato_detector import NaturalVibratoDetector
 from features.humanize_detector import HumanizeDetector
+from features.plugin_bypass_detector import PluginBypassDetector
+from features.soundshifter_detector import SoundShifterDetector
 from utils.settings_manager import SettingsManager
 from utils.helpers import ConfigHelper
 
@@ -38,9 +40,16 @@ class CubaseAutoToolGUI:
         self.flex_tune_detector = FlexTuneDetector()
         self.natural_vibrato_detector = NaturalVibratoDetector()
         self.humanize_detector = HumanizeDetector()
+        self.plugin_bypass_detector = PluginBypassDetector()
+        self.soundshifter_detector = SoundShifterDetector()
         self.current_tone_label = None  # Để lưu reference tới label hiển thị tone
         self.transpose_value_label = None  # Label hiển thị giá trị transpose
         self.return_speed_value_label = None  # Label hiển thị giá trị return speed
+        self.soundshifter_value_label = None  # Label hiển thị giá trị SoundShifter
+        
+        # Plugin bypass toggle state
+        self.plugin_bypass_toggle = None  # Toggle switch widget
+        self.plugin_bypass_state = False  # Current toggle state (False = ON, True = OFF)
         self.flex_tune_value_label = None  # Label hiển thị giá trị flex tune
         self.natural_vibrato_value_label = None  # Label hiển thị giá trị natural vibrato
         self.humanize_value_label = None  # Label hiển thị giá trị humanize
@@ -77,6 +86,9 @@ class CubaseAutoToolGUI:
 
         # Setup footer after main content
         self._setup_footer()
+        
+        # Initialize plugin toggle state
+        self._initialize_plugin_toggle_state()
     
     def _create_section(self, parent, title, column, setup_func):
         """Tạo một section trong grid 3 cột."""
@@ -150,16 +162,55 @@ class CubaseAutoToolGUI:
             print("🔄 Auto-detect đã được bật từ lần trước")
             self.root.after_idle(lambda: self._start_auto_detect_from_saved_state())
         
-        # Nút Dò Tone - dưới phần trên
+        # Khung chứa 2 nút chính
+        main_buttons_frame = CTK.CTkFrame(parent, fg_color="transparent")
+        main_buttons_frame.pack(pady=(0, 15))
+        
+        # Nút Dò Tone
         btn_tone = CTK.CTkButton(
-            parent,
+            main_buttons_frame,
             text=self.tone_detector.get_name(),
-            font=("Arial", 12, "bold"),
+            font=("Arial", 11, "bold"),
             command=self._execute_tone_detector,
-            width=200,
+            width=95,
             height=35
         )
-        btn_tone.pack(pady=(0, 15))
+        btn_tone.pack(side="left", padx=(0, 5))
+        
+        # Plugin Bypass Toggle Frame
+        plugin_frame = CTK.CTkFrame(main_buttons_frame, fg_color="transparent")
+        plugin_frame.pack(side="left", padx=(5, 0))
+        
+        # Plugin label
+        plugin_label = CTK.CTkLabel(
+            plugin_frame,
+            text="Plugin:",
+            font=("Arial", 9),
+            text_color="#CCCCCC"
+        )
+        plugin_label.pack()
+        
+        # Plugin Bypass Toggle Switch
+        self.plugin_bypass_toggle = CTK.CTkSwitch(
+            plugin_frame,
+            text="",
+            command=self._on_plugin_toggle_changed,
+            width=50,
+            height=24,
+            progress_color="#4CAF50",  # Green when ON
+            button_color="#FF4444",   # Red button
+            button_hover_color="#CC3333"
+        )
+        self.plugin_bypass_toggle.pack()
+        
+        # Plugin state label
+        self.plugin_state_label = CTK.CTkLabel(
+            plugin_frame,
+            text="ON",
+            font=("Arial", 8, "bold"),
+            text_color="#4CAF50"  # Green for ON
+        )
+        self.plugin_state_label.pack()
         
         # Separator
         separator = CTK.CTkFrame(parent, height=2, fg_color="#404040")
@@ -456,13 +507,70 @@ class CubaseAutoToolGUI:
     
     def _setup_music_section(self, parent):
         """Thiết lập nội dung cho section Nhạc."""
-        placeholder = CTK.CTkLabel(
+        # SoundShifter Pitch Stereo Title
+        pitch_title = CTK.CTkLabel(
             parent,
-            text="Các tính năng\nxử lý nhạc\nsẽ có ở đây",
-            font=("Arial", 12),
-            text_color="gray"
+            text="SoundShifter Pitch",
+            font=("Arial", 14, "bold"),
+            text_color="#FF6B6B"
         )
-        placeholder.pack(expand=True)
+        pitch_title.pack(pady=(0, 10))
+        
+        # Current value display
+        self.soundshifter_value_label = CTK.CTkLabel(
+            parent,
+            text="Giá trị: 0 (Bình thường)",
+            font=("Arial", 10),
+            text_color="#FFFFFF",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=180,
+            height=20
+        )
+        self.soundshifter_value_label.pack(pady=(0, 15))
+        
+        # Buttons Frame
+        buttons_frame = CTK.CTkFrame(parent, fg_color="transparent")
+        buttons_frame.pack(pady=(0, 10))
+        
+        # Nâng Tone Button
+        btn_raise = CTK.CTkButton(
+            buttons_frame,
+            text="Nâng Tone (+2)",
+            command=self._raise_tone,
+            width=120,
+            height=35,
+            font=("Arial", 11, "bold"),
+            fg_color="#4CAF50",
+            hover_color="#45A049"
+        )
+        btn_raise.pack(side="top", pady=(0, 5))
+        
+        # Hạ Tone Button
+        btn_lower = CTK.CTkButton(
+            buttons_frame,
+            text="Hạ Tone (-2)",
+            command=self._lower_tone,
+            width=120,
+            height=35,
+            font=("Arial", 11, "bold"),
+            fg_color="#FF5722",
+            hover_color="#E64A19"
+        )
+        btn_lower.pack(side="top", pady=(0, 5))
+        
+        # Reset Button
+        btn_reset = CTK.CTkButton(
+            buttons_frame,
+            text="Reset (0)",
+            command=self._reset_soundshifter,
+            width=120,
+            height=30,
+            font=("Arial", 10),
+            fg_color="#9E9E9E",
+            hover_color="#757575"
+        )
+        btn_reset.pack(side="top")
     
     def _setup_vocal_section(self, parent):
         """Thiết lập nội dung cho section Giọng hát.""" 
@@ -851,6 +959,106 @@ class CubaseAutoToolGUI:
             # Resume auto-detect
             self.resume_auto_detect_after_manual_action()
     
+    def _on_plugin_toggle_changed(self):
+        """Xử lý khi toggle switch thay đổi trạng thái."""
+        # Lấy trạng thái hiện tại của toggle
+        toggle_value = self.plugin_bypass_toggle.get()
+        
+        # Cập nhật UI
+        self._update_plugin_toggle_ui(toggle_value)
+        
+        # Thực hiện toggle trong Cubase
+        self._toggle_plugin_bypass()
+    
+    def _update_plugin_toggle_ui(self, is_on):
+        """Cập nhật UI dựa trên trạng thái toggle."""
+        if is_on:  # Plugin ON (active)
+            self.plugin_state_label.configure(
+                text="ON",
+                text_color="#4CAF50"  # Green
+            )
+            self.plugin_bypass_state = False  # ON means not bypassed
+        else:  # Plugin OFF (bypassed)
+            self.plugin_state_label.configure(
+                text="OFF",
+                text_color="#FF4444"  # Red
+            )
+            self.plugin_bypass_state = True  # OFF means bypassed
+    
+    def _toggle_plugin_bypass(self):
+        """Toggle bật/tắt plugin AUTO-TUNE PRO."""
+        # Pause auto-detect during operation
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            # Thực hiện toggle bypass
+            success = self.plugin_bypass_detector.toggle_plugin_bypass()
+            
+            if success:
+                print("✅ Plugin bypass toggled successfully")
+                # Sync toggle state với actual plugin state nếu có thể
+                self._sync_toggle_with_plugin_state()
+            else:
+                print("❌ Plugin bypass toggle failed")
+                # Revert toggle nếu thất bại (tắt callback tạm thời)
+                self._revert_toggle_state()
+                
+        except Exception as e:
+            print(f"❌ Error in plugin bypass toggle: {e}")
+            # Revert toggle nếu có lỗi (tắt callback tạm thời)
+            self._revert_toggle_state()
+    
+    def _sync_toggle_with_plugin_state(self):
+        """Đồng bộ trạng thái toggle với trạng thái thực tế của plugin."""
+        try:
+            # Lấy trạng thái hiện tại từ detector
+            if hasattr(self.plugin_bypass_detector, 'current_state'):
+                actual_state = self.plugin_bypass_detector.current_state
+                if actual_state is not None:
+                    # Cập nhật toggle để match với trạng thái thực tế
+                    if actual_state != self.plugin_bypass_toggle.get():
+                        # Tạm thời tắt callback để tránh recursive call
+                        old_command = self.plugin_bypass_toggle.cget("command")
+                        self.plugin_bypass_toggle.configure(command=None)
+                        
+                        # Set toggle state
+                        if actual_state:  # Plugin ON
+                            self.plugin_bypass_toggle.select()
+                        else:  # Plugin OFF
+                            self.plugin_bypass_toggle.deselect()
+                        
+                        # Restore callback và cập nhật UI
+                        self.plugin_bypass_toggle.configure(command=old_command)
+                        self._update_plugin_toggle_ui(actual_state)
+                        
+        except Exception as e:
+            print(f"❌ Error syncing toggle state: {e}")
+        finally:
+            # Resume auto-detect
+            self.resume_auto_detect_after_manual_action()
+    
+    def _revert_toggle_state(self):
+        """Revert toggle state mà không trigger callback để tránh vòng lặp."""
+        try:
+            # Tạm thời tắt callback
+            old_command = self.plugin_bypass_toggle.cget("command")
+            self.plugin_bypass_toggle.configure(command=None)
+            
+            # Revert toggle state
+            self.plugin_bypass_toggle.toggle()
+            
+            # Cập nhật UI theo trạng thái mới
+            current_state = self.plugin_bypass_toggle.get()
+            self._update_plugin_toggle_ui(current_state)
+            
+            # Restore callback
+            self.plugin_bypass_toggle.configure(command=old_command)
+            
+            print("🔄 Toggle state reverted due to error")
+            
+        except Exception as e:
+            print(f"❌ Error reverting toggle state: {e}")
+    
     def run(self):
         """Chạy ứng dụng."""
         # Đặt protocol để cleanup khi đóng
@@ -865,6 +1073,42 @@ class CubaseAutoToolGUI:
         
         self.root.destroy()
     
+    def _initialize_plugin_toggle_state(self):
+        """Khởi tạo trạng thái toggle dựa trên trạng thái thực tế của plugin."""
+        try:
+            print("🔄 Checking initial plugin state...")
+            
+            # Thử detect trạng thái plugin hiện tại (nếu Cubase đang chạy) - silent mode
+            state_result = self.plugin_bypass_detector.get_current_state(silent=True)
+            
+            if state_result and state_result[0] is not None:
+                current_state = state_result[0]
+                print(f"✅ Detected plugin state: {'ON' if current_state else 'OFF'}")
+                
+                # Tạm thời tắt callback
+                self.plugin_bypass_toggle.configure(command=None)
+                
+                # Set toggle theo trạng thái thực tế
+                if current_state:  # Plugin ON
+                    self.plugin_bypass_toggle.select()
+                else:  # Plugin OFF
+                    self.plugin_bypass_toggle.deselect()
+                
+                # Restore callback và cập nhật UI
+                self.plugin_bypass_toggle.configure(command=self._on_plugin_toggle_changed)
+                self._update_plugin_toggle_ui(current_state)
+            else:
+                print("❓ Cannot detect plugin state - setting default to ON")
+                # Default state khi không detect được
+                self.plugin_bypass_toggle.select()  # Default ON
+                self._update_plugin_toggle_ui(True)
+                
+        except Exception as e:
+            print(f"❌ Error initializing plugin toggle state: {e}")
+            # Fallback to default state
+            self.plugin_bypass_toggle.select()
+            self._update_plugin_toggle_ui(True)
+    
     def pause_auto_detect_for_manual_action(self):
         """Tạm dừng auto-detect khi có manual action."""
         self.tone_detector.pause_auto_detect()
@@ -872,6 +1116,55 @@ class CubaseAutoToolGUI:
     def resume_auto_detect_after_manual_action(self):
         """Khôi phục auto-detect sau khi manual action hoàn thành."""
         self.tone_detector.resume_auto_detect()
+    
+    def _raise_tone(self):
+        """Nâng tone lên (+2)."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            success = self.soundshifter_detector.raise_tone(1)  # 1 tone = +2
+            if success:
+                self._update_soundshifter_display()
+                print("✅ Raised tone successfully")
+            else:
+                print("❌ Failed to raise tone")
+        except Exception as e:
+            print(f"❌ Error raising tone: {e}")
+    
+    def _lower_tone(self):
+        """Hạ tone xuống (-2)."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            success = self.soundshifter_detector.lower_tone(1)  # 1 tone = -2
+            if success:
+                self._update_soundshifter_display()
+                print("✅ Lowered tone successfully")
+            else:
+                print("❌ Failed to lower tone")
+        except Exception as e:
+            print(f"❌ Error lowering tone: {e}")
+    
+    def _reset_soundshifter(self):
+        """Reset SoundShifter về 0."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            success = self.soundshifter_detector.reset_pitch()
+            if success:
+                self._update_soundshifter_display()
+                print("✅ Reset SoundShifter successfully")
+            else:
+                print("❌ Failed to reset SoundShifter")
+        except Exception as e:
+            print(f"❌ Error resetting SoundShifter: {e}")
+    
+    def _update_soundshifter_display(self):
+        """Cập nhật hiển thị giá trị SoundShifter."""
+        if self.soundshifter_value_label:
+            current_value = self.soundshifter_detector.current_value
+            description = self.soundshifter_detector.get_tone_description(current_value)
+            self.soundshifter_value_label.configure(text=f"Giá trị: {current_value} ({description})")
     
     def _toggle_theme(self):
         """Chuyển đổi theme giữa dark và light."""

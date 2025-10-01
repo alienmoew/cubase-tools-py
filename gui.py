@@ -11,6 +11,8 @@ from features.plugin_bypass_detector import PluginBypassDetector
 from features.soundshifter_detector import SoundShifterDetector
 from features.soundshifter_bypass_detector import SoundShifterBypassDetector
 from features.proq3_bypass_detector import ProQ3BypassDetector
+from features.xvox_volume_detector import XvoxVolumeDetector
+from features.reverb_detector import ReverbDetector
 from utils.settings_manager import SettingsManager
 from utils.helpers import ConfigHelper
 from utils.bypass_toggle_manager import BypassToggleManager
@@ -48,6 +50,8 @@ class CubaseAutoToolGUI:
         self.soundshifter_detector = SoundShifterDetector()
         self.soundshifter_bypass_detector = SoundShifterBypassDetector()
         self.proq3_bypass_detector = ProQ3BypassDetector()
+        self.xvox_volume_detector = XvoxVolumeDetector()
+        self.reverb_detector = ReverbDetector()
         
         # Initialize bypass toggle manager
         self.bypass_manager = BypassToggleManager(self)
@@ -73,6 +77,10 @@ class CubaseAutoToolGUI:
         self.humanize_value_label = None  # Label hiển thị giá trị humanize
         self.auto_detect_switch = None  # Toggle switch
         self.current_detected_tone = "--"  # Lưu tone hiện tại để so sánh
+        
+        # Audio control labels
+        self.xvox_volume_label = None
+        self.reverb_value_label = None
         
         # Set current theme index based on saved theme
         try:
@@ -704,55 +712,160 @@ class CubaseAutoToolGUI:
         self.soundshifter_bypass_status_label.pack()
     
     def _setup_vocal_section(self, parent):
-        """Thiết lập nội dung cho section Giọng hát."""
-        # ProQ3 Lofi Title
+        """Thiết lập nội dung cho section Giọng hát - compact với Xvox Volume."""
+        # Xvox Volume Title
+        xvox_title = CTK.CTkLabel(
+            parent,
+            text="Xvox Volume",
+            font=("Arial", 12, "bold"),
+            text_color="#FF69B4"
+        )
+        xvox_title.pack(pady=(0, 5))
+        
+        # Current volume display
+        self.xvox_volume_label = CTK.CTkLabel(
+            parent,
+            text="Volume: 45",
+            font=("Arial", 9),
+            text_color="#FFFFFF",
+            fg_color="#2B2B2B",
+            corner_radius=3,
+            width=120,
+            height=18
+        )
+        self.xvox_volume_label.pack(pady=(0, 5))
+        
+        # Volume slider
+        self.xvox_volume_slider = CTK.CTkSlider(
+            parent,
+            from_=self.default_values.get('xvox_volume_min', 30),
+            to=self.default_values.get('xvox_volume_max', 60),
+            number_of_steps=self.default_values.get('xvox_volume_max', 60) - self.default_values.get('xvox_volume_min', 30),
+            command=self._on_xvox_volume_slider_change,
+            width=160,
+            height=14,
+            button_color="#FF69B4",
+            progress_color="#FF69B4"
+        )
+        self.xvox_volume_slider.set(self.default_values.get('xvox_volume_default', 45))
+        self.xvox_volume_slider.pack(pady=(0, 5))
+        
+        # Apply button
+        btn_apply_volume = CTK.CTkButton(
+            parent,
+            text="Áp Dụng",
+            font=("Arial", 9, "bold"),
+            command=self._apply_xvox_volume,
+            width=100,
+            height=26,
+            fg_color="#FF69B4",
+            hover_color="#FF1493",
+            corner_radius=4
+        )
+        btn_apply_volume.pack(pady=(0, 8))
+        
+        # Separator
+        separator = CTK.CTkFrame(parent, height=1, fg_color="#404040")
+        separator.pack(fill="x", pady=(5, 8))
+        
+        # ProQ3 Title
         lofi_title = CTK.CTkLabel(
             parent,
-            text="Lofi (Pro-Q 3)",
-            font=("Arial", 14, "bold"),
-            text_color="#FF6B6B"
+            text="Pro-Q 3 Lofi",
+            font=("Arial", 12, "bold"),
+            text_color="#32CD32"
         )
-        lofi_title.pack(pady=(0, 20))
+        lofi_title.pack(pady=(0, 8))
         
-        # ProQ3 Bypass Toggle Section
+        # Plugin status - compact
         bypass_frame = CTK.CTkFrame(parent, fg_color="transparent")
-        bypass_frame.pack(pady=(0, 10))
+        bypass_frame.pack()
         
-        # Bypass Toggle Label
         bypass_label = CTK.CTkLabel(
             bypass_frame,
-            text="Plugin Bypass:",
-            font=("Arial", 11, "bold"),
+            text="Plugin:",
+            font=("Arial", 9, "bold"),
             text_color="#FFFFFF"
         )
         bypass_label.pack(pady=(0, 5))
         
-        # Bypass Toggle Switch
         self.proq3_bypass_toggle = CTK.CTkSwitch(
             bypass_frame,
             text="",
             command=lambda: self.bypass_manager.toggle_bypass('proq3'),
-            width=50,
-            height=24,
-            switch_width=50,
-            switch_height=24,
-            fg_color="#FF4444",    # Red when OFF (bypassed)
-            progress_color="#44FF44",  # Green when ON (active)
+            width=40,
+            height=20,
+            fg_color="#FF4444",
+            progress_color="#44FF44"
         )
         self.proq3_bypass_toggle.pack(pady=(0, 5))
         
-        # Bypass Status Label
         self.proq3_bypass_status_label = CTK.CTkLabel(
             bypass_frame,
-            text="Plugin: ON",
-            font=("Arial", 10),
+            text="ON",
+            font=("Arial", 8, "bold"),
             text_color="#44FF44",
-            fg_color="#1F1F1F",
-            corner_radius=4,
-            width=100,
-            height=20
+            fg_color="#2B2B2B",
+            corner_radius=3,
+            width=60,
+            height=16
         )
         self.proq3_bypass_status_label.pack()
+        
+        # Separator
+        separator2 = CTK.CTkFrame(parent, height=1, fg_color="#404040")
+        separator2.pack(fill="x", pady=(8, 5))
+        
+        # Reverb Title
+        reverb_title = CTK.CTkLabel(
+            parent,
+            text="Độ Vang",
+            font=("Arial", 12, "bold"),
+            text_color="#00CED1"
+        )
+        reverb_title.pack(pady=(0, 5))
+        
+        # Current reverb display
+        self.reverb_value_label = CTK.CTkLabel(
+            parent,
+            text="Reverb: 36",
+            font=("Arial", 9),
+            text_color="#FFFFFF",
+            fg_color="#2B2B2B",
+            corner_radius=3,
+            width=120,
+            height=18
+        )
+        self.reverb_value_label.pack(pady=(0, 5))
+        
+        # Reverb slider
+        self.reverb_slider = CTK.CTkSlider(
+            parent,
+            from_=self.default_values.get('reverb_min', 30),
+            to=self.default_values.get('reverb_max', 42),
+            number_of_steps=self.default_values.get('reverb_max', 42) - self.default_values.get('reverb_min', 30),
+            command=self._on_reverb_slider_change,
+            width=160,
+            height=14,
+            button_color="#00CED1",
+            progress_color="#00CED1"
+        )
+        self.reverb_slider.set(self.default_values.get('reverb_default', 36))
+        self.reverb_slider.pack(pady=(0, 5))
+        
+        # Apply button
+        btn_apply_reverb = CTK.CTkButton(
+            parent,
+            text="Áp Dụng",
+            font=("Arial", 9, "bold"),
+            command=self._apply_reverb,
+            width=100,
+            height=26,
+            fg_color="#00CED1",
+            hover_color="#00BFCC",
+            corner_radius=4
+        )
+        btn_apply_reverb.pack(pady=(0, 5))
     
 
     
@@ -1167,6 +1280,74 @@ class CubaseAutoToolGUI:
     def resume_auto_detect_after_manual_action(self):
         """Khôi phục auto-detect sau khi manual action hoàn thành."""
         self.tone_detector.resume_auto_detect()
+    
+    def _on_xvox_volume_slider_change(self, value):
+        """Xử lý khi Xvox volume slider thay đổi."""
+        volume_value = int(round(value))
+        
+        # Tạo text mô tả
+        description = self.xvox_volume_detector.get_volume_description(volume_value)
+        
+        # Cập nhật label
+        if self.xvox_volume_label:
+            self.xvox_volume_label.configure(text=f"Volume: {volume_value}")
+    
+    def _apply_xvox_volume(self):
+        """Áp dụng thay đổi Xvox volume."""
+        # Pause auto-detect during operation
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            # Lấy giá trị từ slider
+            volume_value = int(round(self.xvox_volume_slider.get()))
+            
+            # Thực hiện chỉnh Xvox volume
+            success = self.xvox_volume_detector.set_volume_value(volume_value)
+            
+            if success:
+                print(f"✅ Xvox Volume set to {volume_value} successfully")
+            else:
+                print(f"❌ Failed to set Xvox Volume to {volume_value}")
+                
+        except Exception as e:
+            print(f"❌ Error in Xvox volume adjustment: {e}")
+        finally:
+            # Resume auto-detect
+            self.resume_auto_detect_after_manual_action()
+    
+    def _on_reverb_slider_change(self, value):
+        """Xử lý khi reverb slider thay đổi."""
+        reverb_value = int(round(value))
+        
+        # Tạo text mô tả
+        description = self.reverb_detector.get_reverb_description(reverb_value)
+        
+        # Cập nhật label
+        if self.reverb_value_label:
+            self.reverb_value_label.configure(text=f"Reverb: {reverb_value}")
+    
+    def _apply_reverb(self):
+        """Áp dụng thay đổi Reverb."""
+        # Pause auto-detect during operation
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            # Lấy giá trị từ slider
+            reverb_value = int(round(self.reverb_slider.get()))
+            
+            # Thực hiện chỉnh Reverb
+            success = self.reverb_detector.set_reverb_value(reverb_value)
+            
+            if success:
+                print(f"✅ Reverb set to {reverb_value} successfully")
+            else:
+                print(f"❌ Failed to set Reverb to {reverb_value}")
+                
+        except Exception as e:
+            print(f"❌ Error in reverb adjustment: {e}")
+        finally:
+            # Resume auto-detect
+            self.resume_auto_detect_after_manual_action()
     
     def _raise_tone(self):
         """Nâng tone lên (+2)."""

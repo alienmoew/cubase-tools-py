@@ -31,3 +31,13 @@ humanize_max=100
 soundshifter_pitch_default=0
 soundshifter_pitch_min=-4
 soundshifter_pitch_max=4
+
+# Xvox Volume (Âm lượng mic)
+xvox_volume_default=45
+xvox_volume_min=30
+xvox_volume_max=60
+
+# Reverb (Độ vang mic)
+reverb_default=36
+reverb_min=30
+reverb_max=42

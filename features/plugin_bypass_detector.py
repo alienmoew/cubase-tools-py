@@ -1,4 +1,8 @@
 from features.auto_tune_detector import AutoTuneDetector
+from utils.debug_helper import DebugHelper
+from utils.shared_window_manager import SharedWindowManager
+from utils.shared_screenshot_helper import SharedScreenshotHelper
+import config
 
 
 class PluginBypassDetector(AutoTuneDetector):
@@ -14,8 +18,8 @@ class PluginBypassDetector(AutoTuneDetector):
         self.plugin_name = plugin_name
         
         # Template paths cho cả 2 trạng thái
-        self.off_template_path = "templates/bypass_off_template.png"
-        self.on_template_path = "templates/bypass_on_template.png"
+        self.off_template_path = config.TEMPLATE_PATHS['bypass_off']
+        self.on_template_path = config.TEMPLATE_PATHS['bypass_on']
         
         # Override để không validate range vì đây là toggle
         self.is_toggle = True
@@ -41,27 +45,32 @@ class PluginBypassDetector(AutoTuneDetector):
                 return None
 
             # 3. Thử match cả 2 template để xác định trạng thái
-            off_pos, off_conf = self._find_template_match_by_path(plugin_win, self.off_template_path)
-            on_pos, on_conf = self._find_template_match_by_path(plugin_win, self.on_template_path)
+            off_pos, off_conf = self._find_template_match_by_path(plugin_win, self.off_template_path, silent)
+            on_pos, on_conf = self._find_template_match_by_path(plugin_win, self.on_template_path, silent)
             
-            print(f"🔍 OFF template confidence: {off_conf:.2f}")
-            print(f"🔍 ON template confidence: {on_conf:.2f}")
+            if not silent:
+                DebugHelper.print_template_debug(f"🔍 OFF template confidence: {off_conf:.2f}")
+                DebugHelper.print_template_debug(f"🔍 ON template confidence: {on_conf:.2f}")
             
             # Xác định trạng thái dựa trên confidence cao hơn
             if off_conf > on_conf and off_conf > 0.7:
                 self.current_state = False  # Plugin đang OFF (bypass)
-                print(f"📴 {self.plugin_name} is currently OFF (bypassed)")
+                if not silent:
+                    DebugHelper.print_template_debug(f"📴 {self.plugin_name} is currently OFF (bypassed)")
                 return False, off_pos
             elif on_conf > off_conf and on_conf > 0.7:
                 self.current_state = True   # Plugin đang ON (active)
-                print(f"🔵 {self.plugin_name} is currently ON (active)")
+                if not silent:
+                    DebugHelper.print_template_debug(f"🔵 {self.plugin_name} is currently ON (active)")
                 return True, on_pos
             else:
-                print(f"❓ Cannot determine {self.plugin_name} state")
+                if not silent:
+                    DebugHelper.print_template_debug(f"❓ Cannot determine {self.plugin_name} state")
                 return None, None
 
         except Exception as e:
-            print(f"❌ Error detecting plugin state: {e}")
+            if not silent:
+                DebugHelper.print_always(f"❌ Error detecting plugin state: {e}")
             return None, None
 
     def toggle_plugin_bypass(self):
@@ -91,12 +100,14 @@ class PluginBypassDetector(AutoTuneDetector):
             print(f"❌ Error in plugin bypass toggle: {e}")
             return False
     
-    def _find_template_match_by_path(self, plugin_win, template_path):
-        """Tìm template match với đường dẫn template cụ thể."""
+    def _find_template_match_by_path(self, plugin_win, template_path, silent=False):
+        """Tìm template match với đường dẫn template cụ thể và adaptive matching."""
         import cv2
         import numpy as np
         import pyautogui
         import config
+        from utils.helpers import ImageHelper, TemplateHelper
+        import os
         
         try:
             # Chụp ảnh màn hình vùng plugin
@@ -105,35 +116,66 @@ class PluginBypassDetector(AutoTuneDetector):
             screenshot_np = np.array(screenshot)
             screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2GRAY)
 
+            template_name = os.path.splitext(os.path.basename(template_path))[0]
+            if not silent:
+                DebugHelper.print_template_debug(f"🎯 Bypass plugin window size: {w}x{h} - Testing: {template_name}")
+
             # Load template với đường dẫn cụ thể
             template = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
             if template is None:
-                print(f"❌ Không thể load template: {template_path}")
+                if not silent:
+                    DebugHelper.print_always(f"❌ Không thể load template: {template_path}")
                 return None, 0
 
-            # Template matching
-            result = cv2.matchTemplate(screenshot_gray, template, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            template_h, template_w = template.shape[:2]
+            if not silent:
+                DebugHelper.print_template_debug(f"🎯 Bypass template size: {template_w}x{template_h}")
 
-            print(f"🔍 Template matching confidence for {template_path}: {max_val:.2f}")
+            # Adaptive template matching
+            best_result = TemplateHelper.adaptive_template_match(screenshot_gray, template)
+            
+            if not silent:
+                DebugHelper.print_template_debug(f"🏆 Bypass {template_name} best method: {best_result['method']}")
+                DebugHelper.print_template_debug(f"🔍 Bypass {template_name} confidence: {best_result['confidence']:.3f}")
+                DebugHelper.print_template_debug(f"📏 Bypass {template_name} scale: {best_result['scale']:.2f}")
 
-            if max_val < config.TEMPLATE_MATCH_THRESHOLD:
-                print(f"❌ Template not found: {template_path}. Confidence: {max_val:.2f}")
-                return None, max_val
+            # Save debug image với adaptive result
+            debug_filename = f"bypass_{template_name}_adaptive_debug.png"
+            
+            # Create scaled template for debug visualization
+            if best_result['scale'] != 1.0:
+                scaled_w, scaled_h = best_result['template_size']
+                debug_template = cv2.resize(template, (scaled_w, scaled_h))
+            else:
+                debug_template = template
+            
+            # Save debug image only if not silent and debug is enabled
+            if not silent and DebugHelper.should_save_debug_images():
+                debug_path = ImageHelper.save_template_debug_image(
+                    screenshot_np, debug_template, best_result['location'], 
+                    best_result['confidence'], debug_filename
+                )
+                DebugHelper.print_template_debug(f"🖼 Bypass {template_name} adaptive debug saved -> {debug_path}")
 
-            # Tính toán vị trí click ở giữa template
-            template_height = template.shape[0]
-            template_width = template.shape[1]
-            click_x = x + max_loc[0] + template_width // 2
-            click_y = y + max_loc[1] + template_height // 2
+            if best_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
+                if not silent:
+                    DebugHelper.print_template_debug(f"❌ Bypass template not found: {template_name}. Confidence: {best_result['confidence']:.3f}")
+                return None, best_result['confidence']
 
-            print(f"✅ Template found: {template_path} with confidence: {max_val:.2f}")
-            print(f"🎯 Click position: ({click_x}, {click_y})")
+            # Tính toán vị trí click ở giữa scaled template
+            scaled_w, scaled_h = best_result['template_size']
+            click_x = x + best_result['location'][0] + scaled_w // 2
+            click_y = y + best_result['location'][1] + scaled_h // 2
 
-            return (click_x, click_y), max_val
+            if not silent:
+                DebugHelper.print_template_debug(f"✅ Bypass template found: {template_name} with confidence: {best_result['confidence']:.3f}")
+                DebugHelper.print_template_debug(f"🎯 Bypass click position: ({click_x}, {click_y}) [Scale: {best_result['scale']:.2f}]")
+
+            return (click_x, click_y), best_result['confidence']
             
         except Exception as e:
-            print(f"❌ Error finding template {template_path}: {e}")
+            if not silent:
+                DebugHelper.print_always(f"❌ Error finding bypass template {template_path}: {e}")
             return None, 0
     
     def _find_cubase_process_silent(self):
@@ -147,25 +189,23 @@ class PluginBypassDetector(AutoTuneDetector):
 
     def _focus_cubase_window_silent(self, proc):
         """Focus cửa sổ Cubase và tìm plugin window mà không hiển thị popup error."""
-        from utils.window_manager import WindowManager
-        import time
-        
-        # 1. Focus Cubase process
-        hwnd = WindowManager.focus_window_by_pid(proc.info["pid"])
-        if not hwnd:
-            print("❌ Không thể focus cửa sổ Cubase!")
-            return None
-        
-        time.sleep(0.3)
-        
-        # 2. Tìm cửa sổ AUTO-TUNE PRO mà không hiển thị popup
-        plugin_win = WindowManager.find_window("AUTO-TUNE PRO")
-        if not plugin_win:
-            print("❌ Không tìm thấy cửa sổ AUTO-TUNE PRO!")
-            return None
-
-        print(f"✅ Đã tìm thấy cửa sổ AUTO-TUNE PRO")
-        return plugin_win
+        plugin_key = self._get_plugin_key()
+        return SharedWindowManager.focus_plugin_window_silent(plugin_key, proc)
+    
+    def _focus_cubase_window(self, proc):
+        """Focus Cubase window và tìm plugin với error messages."""
+        plugin_key = self._get_plugin_key()
+        return SharedWindowManager.focus_plugin_window(plugin_key, proc, silent=False)
+    
+    def _get_plugin_key(self):
+        """Get plugin key based on plugin name."""
+        name_to_key = {
+            'AUTO-TUNE PRO': 'autotune',
+            'SoundShifter Pitch Stereo': 'soundshifter', 
+            'Pro-Q 3': 'proq3',
+            'AUTO-KEY': 'autokey'
+        }
+        return name_to_key.get(self.plugin_name, 'autotune')  # Default to autotune
     
     def _click_bypass_button(self, click_pos):
         """Click vào bypass button."""
@@ -175,7 +215,7 @@ class PluginBypassDetector(AutoTuneDetector):
             click_x, click_y = click_pos
 
             # Click vào giữa bypass button
-            MouseHelper.safe_click(click_x, click_y, delay=0.3)
+            MouseHelper.safe_click(click_x, click_y, delay=config.UI_DELAYS['click_delay_short'])
             
             print(f"🔄 Clicked bypass button at ({click_x}, {click_y})")
             return True

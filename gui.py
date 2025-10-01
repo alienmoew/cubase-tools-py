@@ -9,8 +9,12 @@ from features.natural_vibrato_detector import NaturalVibratoDetector
 from features.humanize_detector import HumanizeDetector
 from features.plugin_bypass_detector import PluginBypassDetector
 from features.soundshifter_detector import SoundShifterDetector
+from features.soundshifter_bypass_detector import SoundShifterBypassDetector
+from features.proq3_bypass_detector import ProQ3BypassDetector
 from utils.settings_manager import SettingsManager
 from utils.helpers import ConfigHelper
+from utils.bypass_toggle_manager import BypassToggleManager
+from utils.debug_helper import DebugHelper
 
 class CubaseAutoToolGUI:
     """GUI chính của ứng dụng."""
@@ -28,7 +32,7 @@ class CubaseAutoToolGUI:
         
         self.root = CTK.CTk()
         self.root.title(f"{config.APP_NAME} {config.APP_VERSION}")
-        self.root.geometry("1200x700")  # Tăng kích thước để chứa nhiều chức năng
+        self.root.geometry(config.UI_SETTINGS['window_size'])  # Tăng kích thước để chứa nhiều chức năng
         self.root.resizable(True, True)  # Cho phép resize
         
         # Bind theme shortcut key (Ctrl+T)
@@ -42,6 +46,12 @@ class CubaseAutoToolGUI:
         self.humanize_detector = HumanizeDetector()
         self.plugin_bypass_detector = PluginBypassDetector()
         self.soundshifter_detector = SoundShifterDetector()
+        self.soundshifter_bypass_detector = SoundShifterBypassDetector()
+        self.proq3_bypass_detector = ProQ3BypassDetector()
+        
+        # Initialize bypass toggle manager
+        self.bypass_manager = BypassToggleManager(self)
+        
         self.current_tone_label = None  # Để lưu reference tới label hiển thị tone
         self.transpose_value_label = None  # Label hiển thị giá trị transpose
         self.return_speed_value_label = None  # Label hiển thị giá trị return speed
@@ -50,6 +60,14 @@ class CubaseAutoToolGUI:
         # Plugin bypass toggle state
         self.plugin_bypass_toggle = None  # Toggle switch widget
         self.plugin_bypass_state = False  # Current toggle state (False = ON, True = OFF)
+        
+        # SoundShifter bypass toggle state
+        self.soundshifter_bypass_toggle = None  # SoundShifter toggle switch widget
+        self.soundshifter_bypass_state = False  # Current SoundShifter toggle state (False = ON, True = OFF)
+        
+        # ProQ3 (Lofi) bypass toggle state
+        self.proq3_bypass_toggle = None  # ProQ3 toggle switch widget
+        self.proq3_bypass_state = False  # Current ProQ3 toggle state (False = ON, True = OFF)
         self.flex_tune_value_label = None  # Label hiển thị giá trị flex tune
         self.natural_vibrato_value_label = None  # Label hiển thị giá trị natural vibrato
         self.humanize_value_label = None  # Label hiển thị giá trị humanize
@@ -159,7 +177,7 @@ class CubaseAutoToolGUI:
         
         # Auto-start if previously enabled
         if saved_auto_detect:
-            print("🔄 Auto-detect đã được bật từ lần trước")
+            DebugHelper.print_init_debug("🔄 Auto-detect đã được bật từ lần trước")
             self.root.after_idle(lambda: self._start_auto_detect_from_saved_state())
         
         # Khung chứa 2 nút chính
@@ -194,7 +212,7 @@ class CubaseAutoToolGUI:
         self.plugin_bypass_toggle = CTK.CTkSwitch(
             plugin_frame,
             text="",
-            command=self._on_plugin_toggle_changed,
+            command=lambda: self.bypass_manager.toggle_bypass('plugin'),
             width=50,
             height=24,
             progress_color="#4CAF50",  # Green when ON
@@ -216,294 +234,31 @@ class CubaseAutoToolGUI:
         separator = CTK.CTkFrame(parent, height=2, fg_color="#404040")
         separator.pack(fill="x", pady=(0, 10))
         
-        # Phần Chuyển Giọng
-        pitch_title = CTK.CTkLabel(
+        # Auto-Tune Controls Collapsible Section
+        self.autotune_expanded = False
+        
+        # Auto-Tune Toggle Button
+        self.autotune_toggle_btn = CTK.CTkButton(
             parent,
-            text="Chuyển Giọng",
-            font=("Arial", 14, "bold"),
-            text_color="#FF6B6B"
-        )
-        pitch_title.pack(pady=(0, 5))
-        
-        # Current value display
-        self.transpose_value_label = CTK.CTkLabel(
-            parent,
-            text="Giá trị: 0 (Bình thường)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#1F1F1F",
-            corner_radius=4,
-            width=180,
-            height=20
-        )
-        self.transpose_value_label.pack(pady=(0, 5))
-        
-        # Slider với styling nhỏ gọn
-        self.pitch_slider = CTK.CTkSlider(
-            parent,
-            from_=self.default_values.get('transpose_min', -12),
-            to=self.default_values.get('transpose_max', 12),
-            number_of_steps=abs(self.default_values.get('transpose_min', -12)) + abs(self.default_values.get('transpose_max', 12)),
-            command=self._on_pitch_slider_change,
-            width=220,
-            height=16,
-            button_color="#FF6B6B",
-            button_hover_color="#FF5252",
-            progress_color="#FF6B6B"
-        )
-        self.pitch_slider.set(self.default_values.get('transpose_default', 0))  # Mặc định từ config
-        self.pitch_slider.pack(pady=(0, 3))
-        
-        # Labels for slider compact - sửa căn chỉnh và height
-        labels_frame = CTK.CTkFrame(parent, fg_color="transparent")
-        labels_frame.pack(pady=(0, 5))
-        
-        # Container cho labels với width và height cố định
-        labels_container = CTK.CTkFrame(labels_frame, fg_color="transparent", width=220, height=15)
-        labels_container.pack()
-        labels_container.pack_propagate(False)
-        
-        # Apply Button
-        btn_apply_pitch = CTK.CTkButton(
-            parent,
-            text="Áp Dụng",
-            font=("Arial", 11, "bold"),
-            command=self._apply_pitch_change,
-            width=120,
-            height=30,
-            fg_color="#2CC985",
-            hover_color="#228B67",
-            corner_radius=6
-        )
-        btn_apply_pitch.pack(pady=(5, 5))
-        
-        # Separator giữa Transpose và Return Speed
-        separator2 = CTK.CTkFrame(parent, height=2, fg_color="#404040")
-        separator2.pack(fill="x", pady=(5, 10))
-        
-        # Phần Return Speed
-        return_speed_title = CTK.CTkLabel(
-            parent,
-            text="Return Speed",
-            font=("Arial", 14, "bold"),
-            text_color="#FFD700"
-        )
-        return_speed_title.pack(pady=(0, 5))
-        
-        # Current value display
-        self.return_speed_value_label = CTK.CTkLabel(
-            parent,
-            text="Giá trị: 200 (Mặc định)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#1F1F1F",
-            corner_radius=4,
-            width=180,
-            height=20
-        )
-        self.return_speed_value_label.pack(pady=(0, 5))
-        
-        # Slider cho Return Speed
-        self.return_speed_slider = CTK.CTkSlider(
-            parent,
-            from_=self.default_values.get('return_speed_min', 0),
-            to=self.default_values.get('return_speed_max', 400),
-            number_of_steps=self.default_values.get('return_speed_max', 400) - self.default_values.get('return_speed_min', 0),
-            command=self._on_return_speed_slider_change,
-            width=220,
-            height=16,
-            button_color="#FFD700",
-            button_hover_color="#FFC107",
-            progress_color="#FFD700"
-        )
-        self.return_speed_slider.set(self.default_values.get('return_speed_default', 200))  # Mặc định từ config
-        self.return_speed_slider.pack(pady=(0, 10))
-        
-        # Apply Button cho Return Speed
-        btn_apply_return_speed = CTK.CTkButton(
-            parent,
-            text="Áp Dụng",
-            font=("Arial", 11, "bold"),
-            command=self._apply_return_speed_change,
-            width=120,
-            height=30,
-            fg_color="#FFD700",
-            hover_color="#FFC107",
-            corner_radius=6,
-            text_color="#000000"  # Text màu đen để contrast với nền vàng
-        )
-        btn_apply_return_speed.pack(pady=(5, 5))
-        
-        # Separator giữa Return Speed và Flex Tune
-        separator3 = CTK.CTkFrame(parent, height=2, fg_color="#404040")
-        separator3.pack(fill="x", pady=(5, 10))
-        
-        # Phần Flex Tune
-        flex_tune_title = CTK.CTkLabel(
-            parent,
-            text="Flex Tune",
-            font=("Arial", 14, "bold"),
-            text_color="#FF69B4"
-        )
-        flex_tune_title.pack(pady=(0, 5))
-        
-        # Current value display
-        self.flex_tune_value_label = CTK.CTkLabel(
-            parent,
-            text="Giá trị: 0 (Mặc định)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#1F1F1F",
-            corner_radius=4,
-            width=180,
-            height=20
-        )
-        self.flex_tune_value_label.pack(pady=(0, 5))
-        
-        # Slider cho Flex Tune
-        self.flex_tune_slider = CTK.CTkSlider(
-            parent,
-            from_=self.default_values.get('flex_tune_min', 0),
-            to=self.default_values.get('flex_tune_max', 100),
-            number_of_steps=self.default_values.get('flex_tune_max', 100) - self.default_values.get('flex_tune_min', 0),
-            command=self._on_flex_tune_slider_change,
-            width=220,
-            height=16,
-            button_color="#FF69B4",
-            button_hover_color="#FF1493",
-            progress_color="#FF69B4"
-        )
-        self.flex_tune_slider.set(self.default_values.get('flex_tune_default', 0))  # Mặc định từ config
-        self.flex_tune_slider.pack(pady=(0, 10))
-        
-        # Apply Button cho Flex Tune
-        btn_apply_flex_tune = CTK.CTkButton(
-            parent,
-            text="Áp Dụng",
-            font=("Arial", 11, "bold"),
-            command=self._apply_flex_tune_change,
-            width=120,
-            height=30,
-            fg_color="#FF69B4",
-            hover_color="#FF1493",
-            corner_radius=6,
+            text="▶ Auto-Tune Controls (5 tính năng)",
+            font=("Arial", 12, "bold"),
+            command=self._toggle_autotune_section,
+            width=300,
+            height=35,
+            fg_color="#4A90E2",
+            hover_color="#357ABD",
+            corner_radius=8,
+            anchor="w",
             text_color="#FFFFFF"
         )
-        btn_apply_flex_tune.pack(pady=(5, 5))
+        self.autotune_toggle_btn.pack(pady=(0, 10))
         
-        # Separator giữa Flex Tune và Natural Vibrato
-        separator4 = CTK.CTkFrame(parent, height=2, fg_color="#404040")
-        separator4.pack(fill="x", pady=(5, 10))
+        # Auto-Tune Controls Frame (initially hidden)
+        self.autotune_frame = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=8)
+        # Frame is packed but hidden initially
         
-        # Phần Natural Vibrato
-        natural_vibrato_title = CTK.CTkLabel(
-            parent,
-            text="Natural Vibrato",
-            font=("Arial", 14, "bold"),
-            text_color="#8A2BE2"
-        )
-        natural_vibrato_title.pack(pady=(0, 5))
-        
-        # Current value display
-        self.natural_vibrato_value_label = CTK.CTkLabel(
-            parent,
-            text="Giá trị: 0 (Mặc định)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#1F1F1F",
-            corner_radius=4,
-            width=180,
-            height=20
-        )
-        self.natural_vibrato_value_label.pack(pady=(0, 5))
-        
-        # Slider cho Natural Vibrato
-        self.natural_vibrato_slider = CTK.CTkSlider(
-            parent,
-            from_=self.default_values.get('natural_vibrato_min', -12),
-            to=self.default_values.get('natural_vibrato_max', 12),
-            number_of_steps=abs(self.default_values.get('natural_vibrato_min', -12)) + abs(self.default_values.get('natural_vibrato_max', 12)),
-            command=self._on_natural_vibrato_slider_change,
-            width=220,
-            height=16,
-            button_color="#8A2BE2",
-            button_hover_color="#7B68EE",
-            progress_color="#8A2BE2"
-        )
-        self.natural_vibrato_slider.set(self.default_values.get('natural_vibrato_default', 0))  # Mặc định từ config
-        self.natural_vibrato_slider.pack(pady=(0, 10))
-        
-        # Apply Button cho Natural Vibrato
-        btn_apply_natural_vibrato = CTK.CTkButton(
-            parent,
-            text="Áp Dụng",
-            font=("Arial", 11, "bold"),
-            command=self._apply_natural_vibrato_change,
-            width=120,
-            height=30,
-            fg_color="#8A2BE2",
-            hover_color="#7B68EE",
-            corner_radius=6,
-            text_color="#FFFFFF"
-        )
-        btn_apply_natural_vibrato.pack(pady=(5, 5))
-        
-        # Separator giữa Natural Vibrato và Humanize
-        separator5 = CTK.CTkFrame(parent, height=2, fg_color="#404040")
-        separator5.pack(fill="x", pady=(5, 10))
-        
-        # Phần Humanize
-        humanize_title = CTK.CTkLabel(
-            parent,
-            text="Humanize",
-            font=("Arial", 14, "bold"),
-            text_color="#32CD32"
-        )
-        humanize_title.pack(pady=(0, 5))
-        
-        # Current value display
-        self.humanize_value_label = CTK.CTkLabel(
-            parent,
-            text="Giá trị: 0 (Mặc định)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#1F1F1F",
-            corner_radius=4,
-            width=180,
-            height=20
-        )
-        self.humanize_value_label.pack(pady=(0, 5))
-        
-        # Slider cho Humanize
-        self.humanize_slider = CTK.CTkSlider(
-            parent,
-            from_=self.default_values.get('humanize_min', 0),
-            to=self.default_values.get('humanize_max', 100),
-            number_of_steps=self.default_values.get('humanize_max', 100) - self.default_values.get('humanize_min', 0),
-            command=self._on_humanize_slider_change,
-            width=220,
-            height=16,
-            button_color="#32CD32",
-            button_hover_color="#228B22",
-            progress_color="#32CD32"
-        )
-        self.humanize_slider.set(self.default_values.get('humanize_default', 0))  # Mặc định từ config
-        self.humanize_slider.pack(pady=(0, 10))
-        
-        # Apply Button cho Humanize
-        btn_apply_humanize = CTK.CTkButton(
-            parent,
-            text="Áp Dụng",
-            font=("Arial", 11, "bold"),
-            command=self._apply_humanize_change,
-            width=120,
-            height=30,
-            fg_color="#32CD32",
-            hover_color="#228B22",
-            corner_radius=6,
-            text_color="#FFFFFF"
-        )
-        btn_apply_humanize.pack(pady=(5, 5))
+        # Setup Auto-Tune controls inside the frame
+        self._setup_autotune_controls(self.autotune_frame)
     
     def _setup_music_section(self, parent):
         """Thiết lập nội dung cho section Nhạc."""
@@ -570,17 +325,434 @@ class CubaseAutoToolGUI:
             fg_color="#9E9E9E",
             hover_color="#757575"
         )
-        btn_reset.pack(side="top")
+        btn_reset.pack(side="top", pady=(0, 15))
+    
+    def _toggle_autotune_section(self):
+        """Toggle hiển thị/ẩn Auto-Tune controls section."""
+        if self.autotune_expanded:
+            # Collapse - ẩn frame
+            self.autotune_frame.pack_forget()
+            self.autotune_toggle_btn.configure(text="▶ Auto-Tune Controls (5 tính năng)")
+            self.autotune_expanded = False
+        else:
+            # Expand - hiển thị frame
+            self.autotune_frame.pack(fill="x", pady=(0, 10), padx=10)
+            self.autotune_toggle_btn.configure(text="▼ Auto-Tune Controls (5 tính năng)")
+            self.autotune_expanded = True
+    
+    def _setup_autotune_controls(self, parent):
+        """Thiết lập tất cả Auto-Tune controls trong collapsible section."""
+        
+        # Padding cho toàn bộ section
+        content_frame = CTK.CTkFrame(parent, fg_color="transparent")
+        content_frame.pack(fill="both", expand=True, padx=15, pady=15)
+        
+        # === 1. TRANSPOSE SECTION ===
+        # Phần Chuyển Giọng
+        pitch_title = CTK.CTkLabel(
+            content_frame,
+            text="1. Chuyển Giọng (Transpose)",
+            font=("Arial", 13, "bold"),
+            text_color="#FF6B6B"
+        )
+        pitch_title.pack(pady=(0, 5), anchor="w")
+        
+        # Current value display
+        self.transpose_value_label = CTK.CTkLabel(
+            content_frame,
+            text="Giá trị: 0 (Bình thường)",
+            font=("Arial", 10),
+            text_color="#FFFFFF",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=180,
+            height=20
+        )
+        self.transpose_value_label.pack(pady=(0, 5))
+        
+        # Slider với styling nhỏ gọn
+        self.pitch_slider = CTK.CTkSlider(
+            content_frame,
+            from_=self.default_values.get('transpose_min', -12),
+            to=self.default_values.get('transpose_max', 12),
+            number_of_steps=abs(self.default_values.get('transpose_min', -12)) + abs(self.default_values.get('transpose_max', 12)),
+            command=self._on_pitch_slider_change,
+            width=220,
+            height=16,
+            button_color="#FF6B6B",
+            button_hover_color="#FF5252",
+            progress_color="#FF6B6B"
+        )
+        self.pitch_slider.set(self.default_values.get('transpose_default', 0))
+        self.pitch_slider.pack(pady=(0, 5))
+        
+        # Apply Button
+        btn_apply_pitch = CTK.CTkButton(
+            content_frame,
+            text="Áp Dụng Transpose",
+            font=("Arial", 10, "bold"),
+            command=self._apply_pitch_change,
+            width=140,
+            height=28,
+            fg_color="#2CC985",
+            hover_color="#228B67",
+            corner_radius=6
+        )
+        btn_apply_pitch.pack(pady=(0, 15))
+        
+        # === 2. RETURN SPEED SECTION ===
+        return_speed_title = CTK.CTkLabel(
+            content_frame,
+            text="2. Return Speed",
+            font=("Arial", 13, "bold"),
+            text_color="#FFA500"
+        )
+        return_speed_title.pack(pady=(0, 5), anchor="w")
+        
+        self.return_speed_value_label = CTK.CTkLabel(
+            content_frame,
+            text="Giá trị: 0 (Mặc định)",
+            font=("Arial", 10),
+            text_color="#FFFFFF",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=180,
+            height=20
+        )
+        self.return_speed_value_label.pack(pady=(0, 5))
+        
+        self.return_speed_slider = CTK.CTkSlider(
+            content_frame,
+            from_=self.default_values.get('return_speed_min', 0),
+            to=self.default_values.get('return_speed_max', 100),
+            number_of_steps=self.default_values.get('return_speed_max', 100) - self.default_values.get('return_speed_min', 0),
+            command=self._on_return_speed_slider_change,
+            width=220,
+            height=16,
+            button_color="#FFA500",
+            button_hover_color="#FF8C00",
+            progress_color="#FFA500"
+        )
+        self.return_speed_slider.set(self.default_values.get('return_speed_default', 0))
+        self.return_speed_slider.pack(pady=(0, 5))
+        
+        btn_apply_return_speed = CTK.CTkButton(
+            content_frame,
+            text="Áp Dụng Return Speed",
+            font=("Arial", 10, "bold"),
+            command=self._apply_return_speed_change,
+            width=140,
+            height=28,
+            fg_color="#FFA500",
+            hover_color="#FF8C00",
+            corner_radius=6
+        )
+        btn_apply_return_speed.pack(pady=(0, 15))
+        
+        # === 3. FLEX TUNE SECTION ===
+        flex_tune_title = CTK.CTkLabel(
+            content_frame,
+            text="3. Flex Tune",
+            font=("Arial", 13, "bold"),
+            text_color="#FF69B4"
+        )
+        flex_tune_title.pack(pady=(0, 5), anchor="w")
+        
+        self.flex_tune_value_label = CTK.CTkLabel(
+            content_frame,
+            text="Giá trị: 0 (Mặc định)",
+            font=("Arial", 10),
+            text_color="#FFFFFF",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=180,
+            height=20
+        )
+        self.flex_tune_value_label.pack(pady=(0, 5))
+        
+        self.flex_tune_slider = CTK.CTkSlider(
+            content_frame,
+            from_=self.default_values.get('flex_tune_min', 0),
+            to=self.default_values.get('flex_tune_max', 100),
+            number_of_steps=self.default_values.get('flex_tune_max', 100) - self.default_values.get('flex_tune_min', 0),
+            command=self._on_flex_tune_slider_change,
+            width=220,
+            height=16,
+            button_color="#FF69B4",
+            button_hover_color="#FF1493",
+            progress_color="#FF69B4"
+        )
+        self.flex_tune_slider.set(self.default_values.get('flex_tune_default', 0))
+        self.flex_tune_slider.pack(pady=(0, 5))
+        
+        btn_apply_flex_tune = CTK.CTkButton(
+            content_frame,
+            text="Áp Dụng Flex Tune",
+            font=("Arial", 10, "bold"),
+            command=self._apply_flex_tune_change,
+            width=140,
+            height=28,
+            fg_color="#FF69B4",
+            hover_color="#FF1493",
+            corner_radius=6
+        )
+        btn_apply_flex_tune.pack(pady=(0, 15))
+        
+        # === 4. NATURAL VIBRATO SECTION ===
+        natural_vibrato_title = CTK.CTkLabel(
+            content_frame,
+            text="4. Natural Vibrato",
+            font=("Arial", 13, "bold"),
+            text_color="#8A2BE2"
+        )
+        natural_vibrato_title.pack(pady=(0, 5), anchor="w")
+        
+        self.natural_vibrato_value_label = CTK.CTkLabel(
+            content_frame,
+            text="Giá trị: 0 (Mặc định)",
+            font=("Arial", 10),
+            text_color="#FFFFFF",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=180,
+            height=20
+        )
+        self.natural_vibrato_value_label.pack(pady=(0, 5))
+        
+        self.natural_vibrato_slider = CTK.CTkSlider(
+            content_frame,
+            from_=self.default_values.get('natural_vibrato_min', -12),
+            to=self.default_values.get('natural_vibrato_max', 12),
+            number_of_steps=abs(self.default_values.get('natural_vibrato_min', -12)) + abs(self.default_values.get('natural_vibrato_max', 12)),
+            command=self._on_natural_vibrato_slider_change,
+            width=220,
+            height=16,
+            button_color="#8A2BE2",
+            button_hover_color="#7B68EE",
+            progress_color="#8A2BE2"
+        )
+        self.natural_vibrato_slider.set(self.default_values.get('natural_vibrato_default', 0))
+        self.natural_vibrato_slider.pack(pady=(0, 5))
+        
+        btn_apply_natural_vibrato = CTK.CTkButton(
+            content_frame,
+            text="Áp Dụng Natural Vibrato",
+            font=("Arial", 10, "bold"),
+            command=self._apply_natural_vibrato_change,
+            width=140,
+            height=28,
+            fg_color="#8A2BE2",
+            hover_color="#7B68EE",
+            corner_radius=6
+        )
+        btn_apply_natural_vibrato.pack(pady=(0, 15))
+        
+        # === 5. HUMANIZE SECTION ===
+        humanize_title = CTK.CTkLabel(
+            content_frame,
+            text="5. Humanize",
+            font=("Arial", 13, "bold"),
+            text_color="#32CD32"
+        )
+        humanize_title.pack(pady=(0, 5), anchor="w")
+        
+        self.humanize_value_label = CTK.CTkLabel(
+            content_frame,
+            text="Giá trị: 0 (Mặc định)",
+            font=("Arial", 10),
+            text_color="#FFFFFF",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=180,
+            height=20
+        )
+        self.humanize_value_label.pack(pady=(0, 5))
+        
+        self.humanize_slider = CTK.CTkSlider(
+            content_frame,
+            from_=self.default_values.get('humanize_min', 0),
+            to=self.default_values.get('humanize_max', 100),
+            number_of_steps=self.default_values.get('humanize_max', 100) - self.default_values.get('humanize_min', 0),
+            command=self._on_humanize_slider_change,
+            width=220,
+            height=16,
+            button_color="#32CD32",
+            button_hover_color="#228B22",
+            progress_color="#32CD32"
+        )
+        self.humanize_slider.set(self.default_values.get('humanize_default', 0))
+        self.humanize_slider.pack(pady=(0, 5))
+        
+        btn_apply_humanize = CTK.CTkButton(
+            content_frame,
+            text="Áp Dụng Humanize",
+            font=("Arial", 10, "bold"),
+            command=self._apply_humanize_change,
+            width=140,
+            height=28,
+            fg_color="#32CD32",
+            hover_color="#228B22",
+            corner_radius=6
+        )
+        btn_apply_humanize.pack(pady=(0, 10))
+    
+    def _setup_music_section(self, parent):
+        """Thiết lập nội dung cho section Nhạc."""
+        # SoundShifter Pitch Stereo Title
+        pitch_title = CTK.CTkLabel(
+            parent,
+            text="SoundShifter Pitch",
+            font=("Arial", 14, "bold"),
+            text_color="#FF6B6B"
+        )
+        pitch_title.pack(pady=(0, 10))
+        
+        # Current value display
+        self.soundshifter_value_label = CTK.CTkLabel(
+            parent,
+            text="Giá trị: 0 (Bình thường)",
+            font=("Arial", 10),
+            text_color="#FFFFFF",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=180,
+            height=20
+        )
+        self.soundshifter_value_label.pack(pady=(0, 15))
+        
+        # Buttons Frame
+        buttons_frame = CTK.CTkFrame(parent, fg_color="transparent")
+        buttons_frame.pack(pady=(0, 10))
+        
+        # Nâng Tone Button
+        btn_raise = CTK.CTkButton(
+            buttons_frame,
+            text="Nâng Tone (+2)",
+            command=self._raise_tone,
+            width=120,
+            height=35,
+            font=("Arial", 11, "bold"),
+            fg_color="#4CAF50",
+            hover_color="#45A049"
+        )
+        btn_raise.pack(side="top", pady=(0, 5))
+        
+        # Hạ Tone Button
+        btn_lower = CTK.CTkButton(
+            buttons_frame,
+            text="Hạ Tone (-2)",
+            command=self._lower_tone,
+            width=120,
+            height=35,
+            font=("Arial", 11, "bold"),
+            fg_color="#FF5722",
+            hover_color="#E64A19"
+        )
+        btn_lower.pack(side="top", pady=(0, 5))
+        
+        # Reset Button
+        btn_reset = CTK.CTkButton(
+            buttons_frame,
+            text="Reset (0)",
+            command=self._reset_soundshifter,
+            width=120,
+            height=30,
+            font=("Arial", 10),
+            fg_color="#9E9E9E",
+            hover_color="#757575"
+        )
+        btn_reset.pack(side="top", pady=(0, 15))
+        
+        # SoundShifter Bypass Toggle Section
+        bypass_frame = CTK.CTkFrame(parent, fg_color="transparent")
+        bypass_frame.pack(pady=(0, 10))
+        
+        # Bypass Toggle Label
+        bypass_label = CTK.CTkLabel(
+            bypass_frame,
+            text="Plugin Bypass:",
+            font=("Arial", 11, "bold"),
+            text_color="#FFFFFF"
+        )
+        bypass_label.pack(pady=(0, 5))
+        
+        # Bypass Toggle Switch
+        self.soundshifter_bypass_toggle = CTK.CTkSwitch(
+            bypass_frame,
+            text="",
+            command=lambda: self.bypass_manager.toggle_bypass('soundshifter'),
+            width=50,
+            height=24,
+            switch_width=50,
+            switch_height=24,
+            fg_color="#FF4444",    # Red when OFF (bypassed)
+            progress_color="#44FF44",  # Green when ON (active)
+        )
+        self.soundshifter_bypass_toggle.pack(pady=(0, 5))
+        
+        # Bypass Status Label
+        self.soundshifter_bypass_status_label = CTK.CTkLabel(
+            bypass_frame,
+            text="Plugin: ON",
+            font=("Arial", 10),
+            text_color="#44FF44",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=100,
+            height=20
+        )
+        self.soundshifter_bypass_status_label.pack()
     
     def _setup_vocal_section(self, parent):
-        """Thiết lập nội dung cho section Giọng hát.""" 
-        placeholder = CTK.CTkLabel(
+        """Thiết lập nội dung cho section Giọng hát."""
+        # ProQ3 Lofi Title
+        lofi_title = CTK.CTkLabel(
             parent,
-            text="Các tính năng\nxử lý giọng hát\nsẽ có ở đây",
-            font=("Arial", 12),
-            text_color="gray"
+            text="Lofi (Pro-Q 3)",
+            font=("Arial", 14, "bold"),
+            text_color="#FF6B6B"
         )
-        placeholder.pack(expand=True)
+        lofi_title.pack(pady=(0, 20))
+        
+        # ProQ3 Bypass Toggle Section
+        bypass_frame = CTK.CTkFrame(parent, fg_color="transparent")
+        bypass_frame.pack(pady=(0, 10))
+        
+        # Bypass Toggle Label
+        bypass_label = CTK.CTkLabel(
+            bypass_frame,
+            text="Plugin Bypass:",
+            font=("Arial", 11, "bold"),
+            text_color="#FFFFFF"
+        )
+        bypass_label.pack(pady=(0, 5))
+        
+        # Bypass Toggle Switch
+        self.proq3_bypass_toggle = CTK.CTkSwitch(
+            bypass_frame,
+            text="",
+            command=lambda: self.bypass_manager.toggle_bypass('proq3'),
+            width=50,
+            height=24,
+            switch_width=50,
+            switch_height=24,
+            fg_color="#FF4444",    # Red when OFF (bypassed)
+            progress_color="#44FF44",  # Green when ON (active)
+        )
+        self.proq3_bypass_toggle.pack(pady=(0, 5))
+        
+        # Bypass Status Label
+        self.proq3_bypass_status_label = CTK.CTkLabel(
+            bypass_frame,
+            text="Plugin: ON",
+            font=("Arial", 10),
+            text_color="#44FF44",
+            fg_color="#1F1F1F",
+            corner_radius=4,
+            width=100,
+            height=20
+        )
+        self.proq3_bypass_status_label.pack()
     
 
     
@@ -631,15 +803,15 @@ class CubaseAutoToolGUI:
         def copy_phone(event):
             try:
                 import pyperclip
-                pyperclip.copy("0948999892")
+                pyperclip.copy(config.CONTACT_INFO['phone'])
                 # Temporary feedback
                 original_text = copyright_label.cget("text")
                 copyright_label.configure(text="📞 Đã copy số!", text_color="#00aa00")
                 self.root.after(2000, lambda: copyright_label.configure(
                     text=original_text, text_color="#FF6B6B"))
-                print("📞 Copied phone number to clipboard: 0948999892")
+                print(f"📞 Copied phone number to clipboard: {config.CONTACT_INFO['phone']}")
             except ImportError:
-                print("📞 Phone: 0948999892")
+                print(f"📞 Phone: {config.CONTACT_INFO['phone']}")
         
         copyright_label.bind("<Button-1>", copy_phone)
     
@@ -959,105 +1131,7 @@ class CubaseAutoToolGUI:
             # Resume auto-detect
             self.resume_auto_detect_after_manual_action()
     
-    def _on_plugin_toggle_changed(self):
-        """Xử lý khi toggle switch thay đổi trạng thái."""
-        # Lấy trạng thái hiện tại của toggle
-        toggle_value = self.plugin_bypass_toggle.get()
-        
-        # Cập nhật UI
-        self._update_plugin_toggle_ui(toggle_value)
-        
-        # Thực hiện toggle trong Cubase
-        self._toggle_plugin_bypass()
-    
-    def _update_plugin_toggle_ui(self, is_on):
-        """Cập nhật UI dựa trên trạng thái toggle."""
-        if is_on:  # Plugin ON (active)
-            self.plugin_state_label.configure(
-                text="ON",
-                text_color="#4CAF50"  # Green
-            )
-            self.plugin_bypass_state = False  # ON means not bypassed
-        else:  # Plugin OFF (bypassed)
-            self.plugin_state_label.configure(
-                text="OFF",
-                text_color="#FF4444"  # Red
-            )
-            self.plugin_bypass_state = True  # OFF means bypassed
-    
-    def _toggle_plugin_bypass(self):
-        """Toggle bật/tắt plugin AUTO-TUNE PRO."""
-        # Pause auto-detect during operation
-        self.pause_auto_detect_for_manual_action()
-        
-        try:
-            # Thực hiện toggle bypass
-            success = self.plugin_bypass_detector.toggle_plugin_bypass()
-            
-            if success:
-                print("✅ Plugin bypass toggled successfully")
-                # Sync toggle state với actual plugin state nếu có thể
-                self._sync_toggle_with_plugin_state()
-            else:
-                print("❌ Plugin bypass toggle failed")
-                # Revert toggle nếu thất bại (tắt callback tạm thời)
-                self._revert_toggle_state()
-                
-        except Exception as e:
-            print(f"❌ Error in plugin bypass toggle: {e}")
-            # Revert toggle nếu có lỗi (tắt callback tạm thời)
-            self._revert_toggle_state()
-    
-    def _sync_toggle_with_plugin_state(self):
-        """Đồng bộ trạng thái toggle với trạng thái thực tế của plugin."""
-        try:
-            # Lấy trạng thái hiện tại từ detector
-            if hasattr(self.plugin_bypass_detector, 'current_state'):
-                actual_state = self.plugin_bypass_detector.current_state
-                if actual_state is not None:
-                    # Cập nhật toggle để match với trạng thái thực tế
-                    if actual_state != self.plugin_bypass_toggle.get():
-                        # Tạm thời tắt callback để tránh recursive call
-                        old_command = self.plugin_bypass_toggle.cget("command")
-                        self.plugin_bypass_toggle.configure(command=None)
-                        
-                        # Set toggle state
-                        if actual_state:  # Plugin ON
-                            self.plugin_bypass_toggle.select()
-                        else:  # Plugin OFF
-                            self.plugin_bypass_toggle.deselect()
-                        
-                        # Restore callback và cập nhật UI
-                        self.plugin_bypass_toggle.configure(command=old_command)
-                        self._update_plugin_toggle_ui(actual_state)
-                        
-        except Exception as e:
-            print(f"❌ Error syncing toggle state: {e}")
-        finally:
-            # Resume auto-detect
-            self.resume_auto_detect_after_manual_action()
-    
-    def _revert_toggle_state(self):
-        """Revert toggle state mà không trigger callback để tránh vòng lặp."""
-        try:
-            # Tạm thời tắt callback
-            old_command = self.plugin_bypass_toggle.cget("command")
-            self.plugin_bypass_toggle.configure(command=None)
-            
-            # Revert toggle state
-            self.plugin_bypass_toggle.toggle()
-            
-            # Cập nhật UI theo trạng thái mới
-            current_state = self.plugin_bypass_toggle.get()
-            self._update_plugin_toggle_ui(current_state)
-            
-            # Restore callback
-            self.plugin_bypass_toggle.configure(command=old_command)
-            
-            print("🔄 Toggle state reverted due to error")
-            
-        except Exception as e:
-            print(f"❌ Error reverting toggle state: {e}")
+
     
     def run(self):
         """Chạy ứng dụng."""
@@ -1075,39 +1149,16 @@ class CubaseAutoToolGUI:
     
     def _initialize_plugin_toggle_state(self):
         """Khởi tạo trạng thái toggle dựa trên trạng thái thực tế của plugin."""
-        try:
-            print("🔄 Checking initial plugin state...")
-            
-            # Thử detect trạng thái plugin hiện tại (nếu Cubase đang chạy) - silent mode
-            state_result = self.plugin_bypass_detector.get_current_state(silent=True)
-            
-            if state_result and state_result[0] is not None:
-                current_state = state_result[0]
-                print(f"✅ Detected plugin state: {'ON' if current_state else 'OFF'}")
-                
-                # Tạm thời tắt callback
-                self.plugin_bypass_toggle.configure(command=None)
-                
-                # Set toggle theo trạng thái thực tế
-                if current_state:  # Plugin ON
-                    self.plugin_bypass_toggle.select()
-                else:  # Plugin OFF
-                    self.plugin_bypass_toggle.deselect()
-                
-                # Restore callback và cập nhật UI
-                self.plugin_bypass_toggle.configure(command=self._on_plugin_toggle_changed)
-                self._update_plugin_toggle_ui(current_state)
-            else:
-                print("❓ Cannot detect plugin state - setting default to ON")
-                # Default state khi không detect được
-                self.plugin_bypass_toggle.select()  # Default ON
-                self._update_plugin_toggle_ui(True)
-                
-        except Exception as e:
-            print(f"❌ Error initializing plugin toggle state: {e}")
-            # Fallback to default state
-            self.plugin_bypass_toggle.select()
-            self._update_plugin_toggle_ui(True)
+        # Register all bypass toggles with the manager
+        self.bypass_manager.register_toggle('plugin', self.plugin_bypass_detector, 
+                                           self.plugin_bypass_toggle, self.plugin_state_label)
+        self.bypass_manager.register_toggle('soundshifter', self.soundshifter_bypass_detector,
+                                           self.soundshifter_bypass_toggle, self.soundshifter_bypass_status_label)
+        self.bypass_manager.register_toggle('proq3', self.proq3_bypass_detector,
+                                           self.proq3_bypass_toggle, self.proq3_bypass_status_label)
+        
+        # Initialize all toggles using the manager
+        self.bypass_manager.initialize_all_toggles()
     
     def pause_auto_detect_for_manual_action(self):
         """Tạm dừng auto-detect khi có manual action."""

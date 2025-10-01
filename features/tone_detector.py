@@ -27,6 +27,9 @@ class ToneDetector(BaseFeature):
     def pause_auto_detect(self):
         """Tạm dừng auto-detect cho các chức năng khác."""
         self._manual_active = True
+        # Đợi một chút để đảm bảo auto-detect loop đã pause
+        import time
+        time.sleep(0.1)
     
     def resume_auto_detect(self):
         """Cho phép auto-detect tiếp tục sau khi chức năng khác hoàn thành."""

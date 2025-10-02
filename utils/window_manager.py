@@ -35,3 +35,17 @@ class WindowManager:
         screenshot = pyautogui.screenshot(region=(left, top, right - left, bottom - top))
         screenshot.save(save_path)
         return save_path
+    
+    @staticmethod
+    def get_window_rect(hwnd):
+        """Lấy kích thước và vị trí window từ hwnd."""
+        try:
+            import win32gui
+            rect = win32gui.GetWindowRect(hwnd)
+            if rect:
+                left, top, right, bottom = rect
+                return (left, top, right - left, bottom - top)  # (x, y, width, height)
+            return None
+        except Exception as e:
+            print(f"❌ Error getting window rect: {e}")
+            return None

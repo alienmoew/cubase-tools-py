@@ -26,6 +26,27 @@ class OCRHelper:
     def get_text_words(ocr_data):
         """Lấy danh sách từ từ OCR data."""
         return [w.strip() for w in ocr_data["text"] if w.strip()]
+    
+    @staticmethod
+    def extract_text_data_from_image(image_array):
+        """Extract OCR data từ numpy image array."""
+        import pytesseract
+        from PIL import Image
+        
+        # Convert numpy array to PIL Image
+        if len(image_array.shape) == 3:
+            pil_image = Image.fromarray(image_array)
+        else:
+            pil_image = Image.fromarray(image_array, mode='L')
+        
+        # OCR với detailed data
+        ocr_data = pytesseract.image_to_data(
+            pil_image, 
+            output_type=pytesseract.Output.DICT,
+            config='--psm 6'  # Assume uniform block of text
+        )
+        
+        return ocr_data
 
 class ImageHelper:
     """Helper class cho các thao tác với hình ảnh."""
@@ -415,4 +436,23 @@ class MouseHelper:
         pyautogui.rightClick(x, y, _pause=False)
         
         # Restore cursor position
+        MouseHelper._restore_cursor_position(original_pos, return_mode, delay)
+    
+    @staticmethod
+    def batch_click_start():
+        """Bắt đầu batch click - lưu vị trí cursor ban đầu."""
+        import pyautogui
+        return pyautogui.position()
+    
+    @staticmethod
+    def batch_click(x, y, delay=0.05):
+        """Click không restore cursor - dùng cho batch operations."""
+        import pyautogui
+        import time
+        pyautogui.click(x, y, _pause=False)
+        time.sleep(delay)
+    
+    @staticmethod  
+    def batch_click_end(original_pos, return_mode="instant", delay=0.15):
+        """Kết thúc batch click - restore cursor về vị trí ban đầu."""
         MouseHelper._restore_cursor_position(original_pos, return_mode, delay)

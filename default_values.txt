@@ -41,3 +41,17 @@ xvox_volume_max=60
 reverb_default=36
 reverb_min=30
 reverb_max=42
+
+# Volume Nhạc (Âm lượng nhạc trong Cubase)
+volume_default=-3
+volume_min=-7
+volume_max=0
+
+# Bass/Treble Mic (Điều chỉnh âm trầm/cao mic)
+bass_default=0
+bass_min=-30
+bass_max=30
+
+treble_default=0
+treble_min=-20
+treble_max=30

@@ -224,3 +224,68 @@ class AutoTuneDetector(BaseFeature):
     def execute(self):
         """Thực thi chức năng (legacy method)."""
         return self.set_auto_tune_value(self.current_value)
+    
+    def _process_value_input_batch(self, click_pos, value, original_cursor_pos=None):
+        """Xử lý việc click và nhập giá trị cho batch mode - không restore cursor."""
+        try:
+            click_x, click_y = click_pos
+
+            # Click vào vị trí template - sử dụng batch mode với timing tối ưu
+            if original_cursor_pos is not None:
+                # Batch mode - không restore cursor, sử dụng fast timing
+                input_delay = config.UI_DELAYS.get('auto_tune_input_delay', 0.05)
+                MouseHelper.batch_click(click_x, click_y, delay=input_delay)
+            else:
+                # Normal mode
+                MouseHelper.safe_click(click_x, click_y, delay=0.2)
+            
+            # Select all và nhập giá trị mới với timing nhanh hơn
+            fast_delay = config.UI_DELAYS.get('auto_tune_input_delay', 0.05)
+            time.sleep(fast_delay)
+            pyautogui.hotkey('ctrl', 'a')
+            time.sleep(fast_delay)
+            pyautogui.typewrite(str(value))
+            time.sleep(fast_delay)
+            pyautogui.press('enter')
+
+            print(f"🔄 {self.feature_name}: Entered {value} and pressed Enter (fast mode)")
+            return True
+
+        except Exception as e:
+            print(f"❌ Error in {self.feature_name.lower()} batch input process: {e}")
+            return False
+
+    def set_auto_tune_value_batch(self, value, original_cursor_pos=None):
+        """Method để set giá trị trong batch mode - không restore cursor cho đến cuối."""
+        if not self.validate_range(value):
+            return False
+
+        print(f"🎛️ Batch setting {self.feature_name} to: {value}")
+
+        try:
+            # 1. Tìm Cubase process
+            proc = self._find_cubase_process()
+            if not proc:
+                return False
+
+            # 2. Focus Cubase window (chỉ cần một lần cho batch)
+            plugin_win = self._focus_cubase_window(proc)
+            if not plugin_win:
+                return False
+
+            # 3. Tìm template và click
+            click_pos, confidence = self._find_template_match(plugin_win)
+            if not click_pos:
+                return False
+
+            # 4. Xử lý input với batch mode
+            success = self._process_value_input_batch(click_pos, value, original_cursor_pos)
+            if success:
+                self.set_value(value)
+                return True
+
+            return False
+
+        except Exception as e:
+            print(f"❌ Error in {self.feature_name.lower()} batch process: {e}")
+            return False

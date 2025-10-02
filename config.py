@@ -14,13 +14,15 @@ else:  # Development
 RESULT_DIR = "result"
 DATA_DIR = "data"
 SETTINGS_FILE = "settings.json"
+RESULT_DIR = "result"
 
 # OCR Config
 OCR_CONFIG = r"--oem 3 --psm 6"
 
 # Timing
 FOCUS_DELAY = 0.5
-ANALYSIS_DELAY = 6.0
+FOCUS_DELAY_FAST = 0.2  # Faster focus for batch operations
+ANALYSIS_DELAY = 6.0  # BẮT BUỘC 6-7 giây để AUTO-KEY phân tích tone
 AUTO_DETECT_INTERVAL = 2.0
 LISTENING_CHECK_INTERVAL = 1.0
 LISTENING_TIMEOUT = 30
@@ -75,13 +77,19 @@ UI_DELAYS = {
     'window_focus': 0.3,
     'plugin_activate': 0.3,
     'click_delay': 0.15,
-    'click_delay_short': 0.2
+    'click_delay_short': 0.2,
+    'batch_reset_delay': 0.05,  # Giảm từ 0.1 xuống 0.05 - nhanh hơn
+    'fast_click_delay': 0.05,   # Delay nhanh cho batch operations
+    'auto_tune_input_delay': 0.05  # Delay cho auto-tune input operations
 }
 
 # Template Paths
 TEMPLATE_PATHS = {
     'bypass_off': 'templates/bypass_off_template.png',
-    'bypass_on': 'templates/bypass_on_template.png'
+    'bypass_on': 'templates/bypass_on_template.png',
+    'volume_template': 'templates/volume_template.png',
+    'mute_music_template': 'templates/mute_music_template.png',
+    'tone_mic_template': 'templates/tone_mic_template.png'
 }
 
 # UI Settings

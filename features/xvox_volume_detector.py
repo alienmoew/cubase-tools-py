@@ -151,13 +151,23 @@ class XvoxVolumeDetector(AutoTuneDetector):
         
         print(f"🎤 Xvox Volume Detector - Setting volume to: {value}")
         
-        if not self._find_cubase_process():
+        # 1. Find và focus Cubase process
+        proc = self._find_cubase_process()
+        if not proc:
+            return False
+            
+        # 2. Focus Cubase window trước khi làm việc
+        if not self._focus_cubase_window(proc):
             return False
         
-        # Find Xvox plugin window (sử dụng comp template)
+        # 3. Find Xvox plugin window (sử dụng comp template)
         plugin_win = self._find_xvox_window()
         if not plugin_win:
             return False
+        
+        # 4. Focus plugin window
+        plugin_win.activate()
+        time.sleep(0.3)
         
         # Find template match
         match_result = self._find_template_match(plugin_win)
@@ -169,6 +179,24 @@ class XvoxVolumeDetector(AutoTuneDetector):
         # Perform action với value
         return self._perform_action(click_pos, value)
     
+    def _focus_cubase_window(self, proc):
+        """Focus cửa sổ Cubase và tìm plugin window."""
+        from utils.window_manager import WindowManager
+        from utils.helpers import MessageHelper
+        
+        # 1. Focus Cubase process
+        hwnd = WindowManager.focus_window_by_pid(proc.info["pid"])
+        if not hwnd:
+            print("❌ Không thể focus cửa sổ Cubase!")
+            MessageHelper.show_error(
+                "Lỗi Focus Window", 
+                "Không thể focus cửa sổ Cubase!"
+            )
+            return None
+        
+        time.sleep(0.3)
+        return hwnd
+        
     def _find_xvox_window(self):
         """Tìm cửa sổ Xvox plugin."""
         from utils.window_manager import WindowManager

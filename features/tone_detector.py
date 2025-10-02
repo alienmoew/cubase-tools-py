@@ -59,7 +59,7 @@ class ToneDetector(BaseFeature):
         
         return cropped, (left, top, crop_box)
 
-    def execute(self, tone_callback=None):
+    def execute(self, tone_callback=None, fast_mode=False):
         """Thực thi tính năng dò tone."""
         # Set flag cho manual operation và đợi auto release lock
         self._manual_active = True
@@ -68,6 +68,7 @@ class ToneDetector(BaseFeature):
         self._detection_lock.acquire()
             
         self.tone_callback = tone_callback
+        self.fast_mode = fast_mode  # Store fast mode flag
         # 1. Tìm Cubase process
         proc = CubaseProcessFinder.find()
         if not proc:
@@ -91,7 +92,9 @@ class ToneDetector(BaseFeature):
             self._manual_active = False
             self._detection_lock.release()
             return False
-        time.sleep(config.FOCUS_DELAY)
+        # Use fast or normal timing based on mode
+        focus_delay = config.FOCUS_DELAY_FAST if getattr(self, 'fast_mode', False) else config.FOCUS_DELAY
+        time.sleep(focus_delay)
 
         # 3. Tìm plugin window
         plugin_win = WindowManager.find_window("AUTO-KEY")
@@ -106,7 +109,7 @@ class ToneDetector(BaseFeature):
             return False
 
         plugin_win.activate()
-        time.sleep(config.FOCUS_DELAY)
+        time.sleep(focus_delay)
 
         # 4. Screenshot và OCR
         success = self._process_plugin_window(plugin_win)
@@ -142,8 +145,10 @@ class ToneDetector(BaseFeature):
         if not tone_found:
             return False
 
-        # Đợi và click Send button
-        time.sleep(config.ANALYSIS_DELAY)
+        # Đợi và click Send button - BẮT BUỘC phải đợi 6s để plugin phân tích
+        analysis_delay = config.ANALYSIS_DELAY  # Luôn 6 giây để đảm bảo plugin detect xong
+        print(f"🕐 Waiting {analysis_delay}s for AUTO-KEY to analyze tone...")
+        time.sleep(analysis_delay)
         send_clicked = self._find_and_click_send_button(
             data_crop, left, top, crop_box)
 

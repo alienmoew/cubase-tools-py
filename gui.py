@@ -3,18 +3,13 @@ import customtkinter as CTK
 import config
 from features.tone_detector import ToneDetector
 from features.transpose_detector import TransposeDetector
-from features.return_speed_detector import ReturnSpeedDetector
-from features.flex_tune_detector import FlexTuneDetector
-from features.natural_vibrato_detector import NaturalVibratoDetector
-from features.humanize_detector import HumanizeDetector
+from features.autotune_controls_detector import AutoTuneControlsDetector
 from features.plugin_bypass_detector import PluginBypassDetector
 from features.soundshifter_detector import SoundShifterDetector
 from features.soundshifter_bypass_detector import SoundShifterBypassDetector
 from features.proq3_bypass_detector import ProQ3BypassDetector
-from features.xvox_volume_detector import XvoxVolumeDetector
-from features.reverb_detector import ReverbDetector
+from features.xvox_detector import XVoxDetector
 from features.volume_detector import VolumeDetector
-from features.tone_mic_detector import ToneMicDetector
 from utils.settings_manager import SettingsManager
 from utils.helpers import ConfigHelper, MessageHelper
 from utils.bypass_toggle_manager import BypassToggleManager
@@ -58,18 +53,13 @@ class CubaseAutoToolGUI:
         
         self.tone_detector = ToneDetector()
         self.transpose_detector = TransposeDetector()
-        self.return_speed_detector = ReturnSpeedDetector()
-        self.flex_tune_detector = FlexTuneDetector()
-        self.natural_vibrato_detector = NaturalVibratoDetector()
-        self.humanize_detector = HumanizeDetector()
+        self.autotune_controls_detector = AutoTuneControlsDetector()
         self.plugin_bypass_detector = PluginBypassDetector()
         self.soundshifter_detector = SoundShifterDetector()
         self.soundshifter_bypass_detector = SoundShifterBypassDetector()
         self.proq3_bypass_detector = ProQ3BypassDetector()
-        self.xvox_volume_detector = XvoxVolumeDetector()
-        self.reverb_detector = ReverbDetector()
+        self.xvox_detector = XVoxDetector()
         self.volume_detector = VolumeDetector()
-        self.tone_mic_detector = ToneMicDetector()
         
         # Initialize bypass toggle manager
         self.bypass_manager = BypassToggleManager(self)
@@ -1246,10 +1236,10 @@ class CubaseAutoToolGUI:
         
         # Prepare ultra fast batch parameters
         reset_configs = [
-            ('Return Speed', self.return_speed_detector, 'return_speed_default', 200),
-            ('Flex Tune', self.flex_tune_detector, 'flex_tune_default', 0),
-            ('Natural Vibrato', self.natural_vibrato_detector, 'natural_vibrato_default', 0),
-            ('Humanize', self.humanize_detector, 'humanize_default', 0),
+            ('Return Speed', self.autotune_controls_detector.return_speed_detector, 'return_speed_default', 200),
+            ('Flex Tune', self.autotune_controls_detector.flex_tune_detector, 'flex_tune_default', 0),
+            ('Natural Vibrato', self.autotune_controls_detector.natural_vibrato_detector, 'natural_vibrato_default', 0),
+            ('Humanize', self.autotune_controls_detector.humanize_detector, 'humanize_default', 0),
             ('Transpose', self.transpose_detector, 'transpose_default', 0)
         ]
         
@@ -1312,10 +1302,10 @@ class CubaseAutoToolGUI:
         
         reset_items = [
             (self.transpose_detector, self.pitch_slider, self._on_pitch_slider_change, 'transpose_default', 0, 'Transpose'),
-            (self.return_speed_detector, self.return_speed_slider, self._on_return_speed_slider_change, 'return_speed_default', 200, 'Return Speed'),
-            (self.flex_tune_detector, self.flex_tune_slider, self._on_flex_tune_slider_change, 'flex_tune_default', 0, 'Flex Tune'),
-            (self.natural_vibrato_detector, self.natural_vibrato_slider, self._on_natural_vibrato_slider_change, 'natural_vibrato_default', 0, 'Natural Vibrato'),
-            (self.humanize_detector, self.humanize_slider, self._on_humanize_slider_change, 'humanize_default', 0, 'Humanize')
+            (self.autotune_controls_detector.return_speed_detector, self.return_speed_slider, self._on_return_speed_slider_change, 'return_speed_default', 200, 'Return Speed'),
+            (self.autotune_controls_detector.flex_tune_detector, self.flex_tune_slider, self._on_flex_tune_slider_change, 'flex_tune_default', 0, 'Flex Tune'),
+            (self.autotune_controls_detector.natural_vibrato_detector, self.natural_vibrato_slider, self._on_natural_vibrato_slider_change, 'natural_vibrato_default', 0, 'Natural Vibrato'),
+            (self.autotune_controls_detector.humanize_detector, self.humanize_slider, self._on_humanize_slider_change, 'humanize_default', 0, 'Humanize')
         ]
         
         success_count = 0
@@ -1466,7 +1456,7 @@ class CubaseAutoToolGUI:
             speed_value = int(round(self.return_speed_slider.get()))
             
             # Thực hiện chỉnh return speed
-            success = self.return_speed_detector.set_return_speed_value(speed_value)
+            success = self.autotune_controls_detector.set_return_speed_value(speed_value)
             
             if success:
                 print(f"✅ Return Speed adjustment to {speed_value} completed successfully")
@@ -1489,7 +1479,7 @@ class CubaseAutoToolGUI:
             flex_value = int(round(self.flex_tune_slider.get()))
             
             # Thực hiện chỉnh flex tune
-            success = self.flex_tune_detector.set_flex_tune_value(flex_value)
+            success = self.autotune_controls_detector.set_flex_tune_value(flex_value)
             
             if success:
                 print(f"✅ Flex Tune adjustment to {flex_value} completed successfully")
@@ -1512,7 +1502,7 @@ class CubaseAutoToolGUI:
             vibrato_value = int(round(self.natural_vibrato_slider.get()))
             
             # Thực hiện chỉnh natural vibrato
-            success = self.natural_vibrato_detector.set_natural_vibrato_value(vibrato_value)
+            success = self.autotune_controls_detector.set_natural_vibrato_value(vibrato_value)
             
             if success:
                 print(f"✅ Natural Vibrato adjustment to {vibrato_value} completed successfully")
@@ -1535,7 +1525,7 @@ class CubaseAutoToolGUI:
             humanize_value = int(round(self.humanize_slider.get()))
             
             # Thực hiện chỉnh humanize
-            success = self.humanize_detector.set_humanize_value(humanize_value)
+            success = self.autotune_controls_detector.set_humanize_value(humanize_value)
             
             if success:
                 print(f"✅ Humanize adjustment to {humanize_value} completed successfully")
@@ -1720,7 +1710,7 @@ class CubaseAutoToolGUI:
             print(f"🔉 Applying bass value: {bass_value}")
             
             # Thực hiện chỉnh Bass qua ToneMicDetector
-            success = self.tone_mic_detector.set_bass_value(bass_value)
+            success = self.xvox_detector.set_bass_value(bass_value)
             
             if success:
                 print("✅ Bass applied successfully")
@@ -1752,7 +1742,7 @@ class CubaseAutoToolGUI:
             print(f"🔊 Applying treble value: {treble_value}")
             
             # Thực hiện chỉnh Treble qua ToneMicDetector
-            success = self.tone_mic_detector.set_treble_value(treble_value)
+            success = self.xvox_detector.set_treble_value(treble_value)
             
             if success:
                 print("✅ Treble applied successfully")
@@ -1783,8 +1773,8 @@ class CubaseAutoToolGUI:
             
             print(f"🎛️ Applying COMP value: {volume_value}")
             
-            # Thực hiện chỉnh COMP qua XvoxVolumeDetector
-            success = self.xvox_volume_detector.set_volume_value(volume_value)
+            # Thực hiện chỉnh COMP qua XVoxDetector
+            success = self.xvox_detector.set_comp_value(volume_value)
             
             if success:
                 print("✅ COMP applied successfully")
@@ -1815,8 +1805,8 @@ class CubaseAutoToolGUI:
             
             print(f"🌊 Applying reverb mic value: {reverb_value}")
             
-            # Thực hiện chỉnh Reverb qua ReverbDetector
-            success = self.reverb_detector.set_reverb_value(reverb_value)
+            # Thực hiện chỉnh Reverb qua XVoxDetector
+            success = self.xvox_detector.set_reverb_value(reverb_value)
             
             if success:
                 print("✅ Reverb mic applied successfully")

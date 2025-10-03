@@ -133,22 +133,22 @@ class MusicPresetsManager:
             # Prepare ultra fast batch parameters
             parameters_list = [
                 {
-                    'detector': gui_instance.return_speed_detector,
+                    'detector': gui_instance.autotune_controls_detector.return_speed_detector,
                     'value': preset_values['return_speed'],
                     'name': 'Return Speed'
                 },
                 {
-                    'detector': gui_instance.flex_tune_detector,
+                    'detector': gui_instance.autotune_controls_detector.flex_tune_detector,
                     'value': preset_values['flex_tune'],
                     'name': 'Flex Tune'
                 },
                 {
-                    'detector': gui_instance.natural_vibrato_detector,
+                    'detector': gui_instance.autotune_controls_detector.natural_vibrato_detector,
                     'value': preset_values['natural_vibrato'],
                     'name': 'Natural Vibrato'
                 },
                 {
-                    'detector': gui_instance.humanize_detector,
+                    'detector': gui_instance.autotune_controls_detector.humanize_detector,
                     'value': preset_values['humanize'],
                     'name': 'Humanize'
                 }

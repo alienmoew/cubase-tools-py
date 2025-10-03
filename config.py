@@ -89,7 +89,15 @@ TEMPLATE_PATHS = {
     'bypass_on': 'templates/bypass_on_template.png',
     'volume_template': 'templates/volume_template.png',
     'mute_music_template': 'templates/mute_music_template.png',
-    'tone_mic_template': 'templates/tone_mic_template.png'
+    'tone_mic_template': 'templates/tone_mic_template.png',
+    'comp_template': 'templates/comp_template.png',
+    'reverb_template': 'templates/reverb_template.png',
+    'transpose_template': 'templates/transpose_template.png',
+    'return_speed_template': 'templates/return_speed_template.png',
+    'flex_tune_template': 'templates/flex_tune_template.png',
+    'natural_vibrato_template': 'templates/natural_vibrato_template.png',
+    'humanize_template': 'templates/humanize_template.png',
+    'soundshifter_pitch_template': 'templates/soundshifter_pitch_template.png'
 }
 
 # UI Settings

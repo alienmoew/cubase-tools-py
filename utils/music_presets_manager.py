@@ -3,12 +3,37 @@ Music Presets Manager - Quản lý template nhạc Bolero và Nhạc trẻ
 """
 import os
 import config
+from .external_config_manager import ExternalConfigManager
 
 class MusicPresetsManager:
     """Class quản lý presets cho nhạc Bolero và Nhạc trẻ."""
     
     def __init__(self):
-        self.presets_file = "music_presets.txt"
+        # Create default music presets content
+        default_presets_content = """# Music Presets Configuration
+# Format: music_type:level:return_speed:flex_tune:natural_vibrato:humanize
+# Levels: -2, -1, 0, +1, +2
+
+# Bolero presets
+bolero:-2:30:20:15:25
+bolero:-1:35:25:20:30
+bolero:0:40:30:25:35
+bolero:+1:45:35:30:40
+bolero:+2:50:40:35:45
+
+# Nhạc trẻ presets  
+nhac_tre:-2:25:15:10:20
+nhac_tre:-1:30:20:15:25
+nhac_tre:0:35:25:20:30
+nhac_tre:+1:40:30:25:35
+nhac_tre:+2:45:35:30:40"""
+
+        # Ensure external config file exists
+        self.presets_file = ExternalConfigManager.ensure_external_config_exists(
+            "music_presets.txt",
+            default_presets_content
+        )
+        
         self.presets = {}
         self.current_levels = {
             'bolero': 0,      # Mức hiện tại: -2, -1, 0, +1, +2

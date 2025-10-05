@@ -1,20 +1,48 @@
 import os
 import sys
 
+# Import external config manager
+try:
+    from utils.external_config_manager import ExternalConfigManager
+except ImportError:
+    # Fallback if not available during build
+    class ExternalConfigManager:
+        @staticmethod
+        def get_external_config_path(filename):
+            return filename
+
 # Tesseract paths
 if hasattr(sys, "_MEIPASS"):  # PyInstaller
     BASE_PATH = sys._MEIPASS
     TESSERACT_PATH = os.path.join(BASE_PATH, "tesseract.exe")
     TESSDATA_DIR = os.path.join(BASE_PATH, "tessdata")
+    
+    # Fallback to system installation if not found in bundle
+    if not os.path.exists(TESSERACT_PATH):
+        TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        TESSDATA_DIR = r"C:\Program Files\Tesseract-OCR\tessdata"
 else:  # Development
     TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     TESSDATA_DIR = r"C:\Program Files\Tesseract-OCR\tessdata"
 
-# Directories
-RESULT_DIR = "result"
-DATA_DIR = "data"
-SETTINGS_FILE = "settings.json"
-RESULT_DIR = "result"
+# Directories - Support both dev and exe environments
+def get_data_dir(dirname):
+    """Get data directory path that works in both dev and exe environments."""
+    if hasattr(sys, "_MEIPASS"):
+        # For exe, create directories relative to executable location
+        exe_dir = os.path.dirname(sys.executable)
+        return os.path.join(exe_dir, dirname)
+    else:
+        # Development mode - relative to project
+        return dirname
+
+RESULT_DIR = get_data_dir("result")
+DATA_DIR = get_data_dir("data")
+
+# External config files (will be placed outside exe)
+SETTINGS_FILE = ExternalConfigManager.get_external_config_path("settings.json")
+DEFAULT_VALUES_FILE = ExternalConfigManager.get_external_config_path("default_values.txt")
+MUSIC_PRESETS_FILE = ExternalConfigManager.get_external_config_path("music_presets.txt")
 
 # OCR Config
 OCR_CONFIG = r"--oem 3 --psm 6"
@@ -83,21 +111,30 @@ UI_DELAYS = {
     'auto_tune_input_delay': 0.05  # Delay cho auto-tune input operations
 }
 
-# Template Paths
+# Template Paths - Support both dev and exe environments
+def get_template_path(filename):
+    """Get template path that works in both dev and exe environments."""
+    if hasattr(sys, "_MEIPASS"):
+        # Running from exe - templates are bundled
+        return os.path.join(sys._MEIPASS, "templates", filename)
+    else:
+        # Development mode
+        return os.path.join("templates", filename)
+
 TEMPLATE_PATHS = {
-    'bypass_off': 'templates/bypass_off_template.png',
-    'bypass_on': 'templates/bypass_on_template.png',
-    'volume_template': 'templates/volume_template.png',
-    'mute_music_template': 'templates/mute_music_template.png',
-    'tone_mic_template': 'templates/tone_mic_template.png',
-    'comp_template': 'templates/comp_template.png',
-    'reverb_template': 'templates/reverb_template.png',
-    'transpose_template': 'templates/transpose_template.png',
-    'return_speed_template': 'templates/return_speed_template.png',
-    'flex_tune_template': 'templates/flex_tune_template.png',
-    'natural_vibrato_template': 'templates/natural_vibrato_template.png',
-    'humanize_template': 'templates/humanize_template.png',
-    'soundshifter_pitch_template': 'templates/soundshifter_pitch_template.png'
+    'bypass_off': get_template_path('bypass_off_template.png'),
+    'bypass_on': get_template_path('bypass_on_template.png'),
+    'volume_template': get_template_path('volume_template.png'),
+    'mute_music_template': get_template_path('mute_music_template.png'),
+    'tone_mic_template': get_template_path('tone_mic_template.png'),
+    'comp_template': get_template_path('comp_template.png'),
+    'reverb_template': get_template_path('reverb_template.png'),
+    'transpose_template': get_template_path('transpose_template.png'),
+    'return_speed_template': get_template_path('return_speed_template.png'),
+    'flex_tune_template': get_template_path('flex_tune_template.png'),
+    'natural_vibrato_template': get_template_path('natural_vibrato_template.png'),
+    'humanize_template': get_template_path('humanize_template.png'),
+    'soundshifter_pitch_template': get_template_path('soundshifter_pitch_template.png')
 }
 
 # UI Settings

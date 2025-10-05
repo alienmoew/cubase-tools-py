@@ -12,6 +12,12 @@ class OCRHelper:
     @staticmethod
     def setup_tesseract():
         """Cấu hình Tesseract."""
+        print(f"🔧 Setting up Tesseract...")
+        print(f"   TESSERACT_PATH: {config.TESSERACT_PATH}")
+        print(f"   TESSDATA_DIR: {config.TESSDATA_DIR}")
+        print(f"   Tesseract exists: {os.path.exists(config.TESSERACT_PATH)}")
+        print(f"   Tessdata exists: {os.path.exists(config.TESSDATA_DIR)}")
+        
         pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
         os.environ["TESSDATA_PREFIX"] = config.TESSDATA_DIR
     
@@ -223,10 +229,39 @@ class ConfigHelper:
     @staticmethod
     def load_default_values(config_file="default_values.txt"):
         """Đọc giá trị mặc định từ file cấu hình."""
+        from .external_config_manager import ExternalConfigManager
+        
         defaults = {}
         try:
-            # Đường dẫn tới file config
-            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), config_file)
+            # Create default values content if needed
+            default_content = """# Default Values Configuration
+# Format: key=value
+
+# Volume settings
+default_volume=75
+min_volume=0
+max_volume=100
+
+# Auto-tune settings  
+default_return_speed=40
+default_flex_tune=30
+default_natural_vibrato=25
+default_humanize=35
+
+# Transpose settings
+default_transpose=0
+min_transpose=-12
+max_transpose=12
+
+# Timing settings
+detection_delay=0.5
+processing_timeout=10"""
+
+            # Get external config path and ensure it exists
+            config_path = ExternalConfigManager.ensure_external_config_exists(
+                config_file,
+                default_content
+            )
             
             if os.path.exists(config_path):
                 with open(config_path, 'r', encoding='utf-8') as f:

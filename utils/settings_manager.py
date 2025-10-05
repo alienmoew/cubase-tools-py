@@ -2,12 +2,22 @@
 import json
 import os
 import config
+from .external_config_manager import ExternalConfigManager
 
 class SettingsManager:
     """Quản lý settings của ứng dụng."""
     
     def __init__(self):
-        self.settings_file = config.SETTINGS_FILE
+        # Ensure external config file exists
+        default_settings_content = """{
+  "theme": "dark",
+  "auto_detect": false
+}"""
+        self.settings_file = ExternalConfigManager.ensure_external_config_exists(
+            "settings.json", 
+            default_settings_content
+        )
+        
         self.default_settings = {
             "theme": config.DEFAULT_THEME,
             "auto_detect": False

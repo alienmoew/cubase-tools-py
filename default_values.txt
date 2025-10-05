@@ -3,7 +3,7 @@
 # Chú ý: Không được có khoảng trắng xung quanh dấu =
 
 # Transpose (Pitch Adjustment)
-transpose_default=05
+transpose_default=0
 transpose_min=-12
 transpose_max=12
 

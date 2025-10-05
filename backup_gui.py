@@ -1,7 +1,4 @@
 import customtkinter as CTK
-import threading
-import time
-from datetime import datetime
 
 import config
 from features.tone_detector import ToneDetector
@@ -20,241 +17,8 @@ from utils.debug_helper import DebugHelper
 from utils.music_presets_manager import MusicPresetsManager
 from utils.fast_batch_processor import FastBatchProcessor
 from utils.ultra_fast_processor import UltraFastAutoTuneProcessor
+from utils.debug_window import DebugWindow
 
-class DebugWindow:
-    """Cửa sổ debug log riêng biệt."""
-    
-    def __init__(self, parent=None):
-        self.parent = parent
-        self.window = None
-        self.text_widget = None
-        self.log_buffer = []  # Buffer để lưu trữ logs
-        self.max_lines = 1000  # Giới hạn số dòng log
-        self.is_auto_scroll = True  # Auto scroll to bottom
-        self._lock = threading.Lock()
-    
-    def create_window(self):
-        """Tạo cửa sổ debug."""
-        if self.window is None or not self.window.winfo_exists():
-            self.window = CTK.CTkToplevel()
-            self.window.title("Debug Console - Cubase Auto Tool")
-            self.window.geometry("800x600")
-            self.window.resizable(True, True)
-            
-            # Icon và style
-            try:
-                self.window.after(201, lambda: self.window.iconbitmap(''))
-            except:
-                pass
-            
-            # Main container
-            main_frame = CTK.CTkFrame(self.window, fg_color="transparent")
-            main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-            
-            # Title
-            title_label = CTK.CTkLabel(
-                main_frame,
-                text="🐛 Debug Console",
-                font=("Arial", 16, "bold"),
-                text_color="#FF9800"
-            )
-            title_label.pack(pady=(0, 10))
-            
-            # Controls frame
-            controls_frame = CTK.CTkFrame(main_frame, fg_color="transparent")
-            controls_frame.pack(fill="x", pady=(0, 10))
-            
-            # Clear button
-            clear_btn = CTK.CTkButton(
-                controls_frame,
-                text="Clear Logs",
-                command=self._clear_logs,
-                width=100,
-                height=30,
-                fg_color="#E91E63",
-                hover_color="#C2185B"
-            )
-            clear_btn.pack(side="left", padx=(0, 10))
-            
-            # Auto-scroll toggle
-            self.auto_scroll_switch = CTK.CTkSwitch(
-                controls_frame,
-                text="Auto Scroll",
-                command=self._toggle_auto_scroll,
-                width=40,
-                height=20
-            )
-            self.auto_scroll_switch.select()  # Default: ON
-            self.auto_scroll_switch.pack(side="left", padx=(0, 10))
-            
-            # Export button
-            export_btn = CTK.CTkButton(
-                controls_frame,
-                text="Export Logs",
-                command=self._export_logs,
-                width=100,
-                height=30,
-                fg_color="#4CAF50",
-                hover_color="#45A049"
-            )
-            export_btn.pack(side="left")
-            
-            # Stats label
-            self.stats_label = CTK.CTkLabel(
-                controls_frame,
-                text="Lines: 0",
-                font=("Arial", 10),
-                text_color="#888888"
-            )
-            self.stats_label.pack(side="right")
-            
-            # Text display frame with scrollbar
-            text_frame = CTK.CTkFrame(main_frame, fg_color="#1E1E1E", corner_radius=8)
-            text_frame.pack(fill="both", expand=True)
-            
-            # Create text widget with scrollbar
-            self.text_widget = CTK.CTkTextbox(
-                text_frame,
-                font=("Consolas", 10),
-                fg_color="#1E1E1E",
-                text_color="#FFFFFF",
-                corner_radius=0,
-                wrap="word"
-            )
-            self.text_widget.pack(fill="both", expand=True, padx=5, pady=5)
-            
-            # Load existing logs
-            self._load_existing_logs()
-            
-            # Protocol để cleanup khi đóng
-            self.window.protocol("WM_DELETE_WINDOW", self._on_window_close)
-            
-            print("🐛 Debug window created successfully")
-        else:
-            # Nếu window đã tồn tại, đưa lên foreground
-            self.window.lift()
-            self.window.focus()
-    
-    def show(self):
-        """Hiển thị cửa sổ debug."""
-        self.create_window()
-        if self.window:
-            self.window.deiconify()  # Show if minimized
-            self.window.lift()
-            self.window.focus()
-    
-    def add_log(self, message, level="INFO"):
-        """Thêm log message với thread-safe."""
-        with self._lock:
-            timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-            
-            # Color coding based on level
-            color = {
-                "INFO": "#FFFFFF",
-                "SUCCESS": "#4CAF50", 
-                "WARNING": "#FF9800",
-                "ERROR": "#F44336",
-                "DEBUG": "#2196F3"
-            }.get(level, "#FFFFFF")
-            
-            # Format message
-            formatted_msg = f"[{timestamp}] [{level}] {message}\n"
-            
-            # Add to buffer
-            self.log_buffer.append({
-                'text': formatted_msg,
-                'color': color,
-                'timestamp': time.time()
-            })
-            
-            # Limit buffer size
-            if len(self.log_buffer) > self.max_lines:
-                self.log_buffer.pop(0)
-            
-            # Update UI if window exists
-            if self.text_widget:
-                self._update_display()
-    
-    def _update_display(self):
-        """Cập nhật hiển thị trong text widget."""
-        if not self.text_widget:
-            return
-            
-        try:
-            # Clear and rebuild display
-            self.text_widget.delete("1.0", "end")
-            
-            for log_entry in self.log_buffer:
-                # Insert text (note: CTkTextbox doesn't support text coloring like tkinter Text)
-                self.text_widget.insert("end", log_entry['text'])
-            
-            # Auto scroll to bottom if enabled
-            if self.is_auto_scroll:
-                self.text_widget.see("end")
-            
-            # Update stats
-            self._update_stats()
-            
-        except Exception as e:
-            print(f"Error updating debug display: {e}")
-    
-    def _load_existing_logs(self):
-        """Load existing logs từ print statements."""
-        # Thêm một số log mẫu để demo
-        sample_logs = [
-            ("🚀 Cubase Auto Tool started", "INFO"),
-            ("✅ GUI initialized successfully", "SUCCESS"),
-            ("🔧 Loading default values...", "INFO"),
-            ("⚙️ Settings loaded", "INFO"),
-            ("🎨 Theme applied: dark", "INFO")
-        ]
-        
-        for msg, level in sample_logs:
-            self.add_log(msg, level)
-    
-    def _clear_logs(self):
-        """Xóa tất cả logs."""
-        with self._lock:
-            self.log_buffer.clear()
-            if self.text_widget:
-                self.text_widget.delete("1.0", "end")
-                self._update_stats()
-        print("🧹 Debug logs cleared")
-    
-    def _toggle_auto_scroll(self):
-        """Toggle auto scroll."""
-        self.is_auto_scroll = self.auto_scroll_switch.get()
-        print(f"📜 Auto scroll: {'ON' if self.is_auto_scroll else 'OFF'}")
-    
-    def _export_logs(self):
-        """Export logs to file."""
-        try:
-            filename = f"debug_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-            
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(f"Cubase Auto Tool Debug Logs\n")
-                f.write(f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write("=" * 50 + "\n\n")
-                
-                for log_entry in self.log_buffer:
-                    f.write(log_entry['text'])
-            
-            print(f"📄 Logs exported to: {filename}")
-            
-        except Exception as e:
-            print(f"❌ Error exporting logs: {e}")
-    
-    def _update_stats(self):
-        """Cập nhật statistics."""
-        if self.stats_label:
-            line_count = len(self.log_buffer)
-            self.stats_label.configure(text=f"Lines: {line_count}")
-    
-    def _on_window_close(self):
-        """Xử lý khi đóng cửa sổ."""
-        if self.window:
-            self.window.withdraw()  # Hide instead of destroy
-            print("🐛 Debug window hidden")
 
 class CubaseAutoToolGUI:
     """GUI chính của ứng dụng."""
@@ -272,7 +36,7 @@ class CubaseAutoToolGUI:
         
         self.root = CTK.CTk()
         self.root.title(f"{config.APP_NAME} {config.APP_VERSION}")
-        self.root.geometry("1200x600")  # Kích thước tối ưu cho 1 tab
+        self.root.geometry("800x400")  # Kích thước tối ưu cho 1 tab
         self.root.resizable(False, False)
         
         # Đảm bảo cửa sổ luôn hiển thị trên top khi khởi động
@@ -349,13 +113,13 @@ class CubaseAutoToolGUI:
         self._setup_ui()
     
     def _setup_ui(self):
-        # Main container frame
+        # Main container frame - minimal padding
         main_frame = CTK.CTkFrame(self.root, fg_color="transparent")
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        main_frame.pack(fill="both", expand=True, padx=5, pady=5)
         
         # Main content frame
         content_frame = CTK.CTkFrame(main_frame, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        content_frame.pack(fill="both", expand=True, padx=2, pady=2)
         
         # Configure grid layout - 3 columns for main sections
         content_frame.grid_columnconfigure(0, weight=1)
@@ -367,7 +131,7 @@ class CubaseAutoToolGUI:
         self._create_music_section(content_frame)
         self._create_vocal_section(content_frame)
         
-        # Setup footer
+        # Setup footer - minimal
         self._setup_footer()
         
         # Initialize plugin toggle state
@@ -378,272 +142,178 @@ class CubaseAutoToolGUI:
     
     def _create_autotune_section(self, parent):
         """Tạo section Auto-Tune."""
-        # Section frame
-        section_frame = CTK.CTkFrame(parent, corner_radius=10, border_width=1, border_color="#404040")
-        section_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        # Section frame - minimal padding
+        section_frame = CTK.CTkFrame(parent, corner_radius=6, border_width=1, border_color="#404040")
+        section_frame.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
         
-        # Section title
+        # Header với title và toggle
+        header_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
+        header_frame.pack(fill="x", padx=5, pady=(5, 3))
+        
+        # Title
         title_label = CTK.CTkLabel(
-            section_frame,
+            header_frame,
             text="Auto-Tune",
-            font=("Arial", 16, "bold"),
+            font=("Arial", 12, "bold"),
             text_color="#FF6B6B"
         )
-        title_label.pack(pady=(10, 15))
+        title_label.pack(side="left")
         
-        # Content frame
+        # Auto-Tune Toggle (right side)
+        toggle_container = CTK.CTkFrame(header_frame, fg_color="transparent")
+        toggle_container.pack(side="right")
+        
+        self.plugin_bypass_toggle = CTK.CTkSwitch(
+            toggle_container,
+            text="",
+            command=lambda: self.bypass_manager.toggle_bypass('plugin'),
+            width=35,
+            height=18,
+            fg_color="#FF4444",
+            progress_color="#44FF44"
+        )
+        self.plugin_bypass_toggle.pack(side="left", padx=(0, 3))
+        
+        self.plugin_state_label = CTK.CTkLabel(
+            toggle_container,
+            text="ON",
+            font=("Arial", 8, "bold"),
+            text_color="#44FF44",
+            width=25
+        )
+        self.plugin_state_label.pack(side="left")
+        
+        # Content frame - minimal
         content_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        content_frame.pack(fill="both", expand=True, padx=5, pady=(0, 5))
         
-        # Tone hiện tại và Tự động dò
-        top_row = CTK.CTkFrame(content_frame, fg_color="transparent")
-        top_row.pack(fill="x", pady=(0, 10))
+        # Tone detection compact
+        tone_row = CTK.CTkFrame(content_frame, fg_color="#2B2B2B", corner_radius=4)
+        tone_row.pack(fill="x", pady=(0, 3))
         
-        # Current Tone Display
+        # Tone info
+        tone_info = CTK.CTkFrame(tone_row, fg_color="transparent")
+        tone_info.pack(fill="x", padx=4, pady=4)
+        
+        # Current Tone - smaller
         self.current_tone_label = CTK.CTkLabel(
-            top_row,
-            text="Tone: --",
-            font=("Arial", 12, "bold"),
-            text_color="#2CC985"
+            tone_info,
+            text="--",
+            font=("Arial", 11, "bold"),
+            text_color="#2CC985",
+            width=30
         )
         self.current_tone_label.pack(side="left")
         
-        # Auto Detect Toggle
-        auto_detect_frame = CTK.CTkFrame(top_row, fg_color="transparent")
-        auto_detect_frame.pack(side="right")
-        
-        auto_detect_label = CTK.CTkLabel(
-            auto_detect_frame,
-            text="Tự động dò:",
-            font=("Arial", 11)
+        # Dò button - compact
+        btn_tone = CTK.CTkButton(
+            tone_info,
+            text="DÒ",
+            font=("Arial", 9, "bold"),
+            command=self._execute_tone_detector,
+            width=35,
+            height=22,
+            fg_color="#2CC985",
+            hover_color="#25B074"
         )
-        auto_detect_label.pack(side="left", padx=(0, 5))
+        btn_tone.pack(side="left", padx=(5, 0))
         
+        # Auto toggle - compact
         self.auto_detect_switch = CTK.CTkSwitch(
-            auto_detect_frame,
-            text="",
+            tone_info,
+            text="Auto",
             command=self._toggle_auto_detect,
-            width=40,
-            height=20
+            width=35,
+            height=16,
+            font=("Arial", 8)
         )
         
-        # Load saved auto-detect state
         saved_auto_detect = self.settings_manager.get_auto_detect()
-        
         if saved_auto_detect:
             self.auto_detect_switch.select()
         
-        self.auto_detect_switch.pack(side="left")
+        self.auto_detect_switch.pack(side="right")
         
-        # Auto-start if previously enabled
         if saved_auto_detect:
             DebugHelper.print_init_debug("🔄 Auto-detect đã được bật từ lần trước")
             self.root.after_idle(lambda: self._start_auto_detect_from_saved_state())
         
-        # Khung chứa nút Dò Tone
-        main_buttons_frame = CTK.CTkFrame(content_frame, fg_color="transparent")
-        main_buttons_frame.pack(pady=(0, 10))
+        # Chuyển Giọng
+        transpose_frame = CTK.CTkFrame(content_frame, fg_color="#2B2B2B", corner_radius=4)
+        transpose_frame.pack(fill="x", pady=(0, 3))
         
-        # Nút Dò Tone
-        btn_tone = CTK.CTkButton(
-            main_buttons_frame,
-            text=self.tone_detector.get_name(),
-            font=("Arial", 11, "bold"),
-            command=self._execute_tone_detector,
-            width=120,
-            height=35
+        transpose_inner = CTK.CTkFrame(transpose_frame, fg_color="transparent")
+        transpose_inner.pack(pady=4, padx=4, fill="x")
+        
+        # Label
+        label = CTK.CTkLabel(transpose_inner, text="Chuyển Giọng", font=("Arial", 9))
+        label.pack(side="left")
+        
+        # Buttons right side
+        btn_frame = CTK.CTkFrame(transpose_inner, fg_color="transparent")
+        btn_frame.pack(side="right")
+        
+        self.btn_pitch_old = CTK.CTkButton(
+            btn_frame,
+            text="GIÀ",
+            font=("Arial", 9, "bold"),
+            command=self._apply_pitch_old,
+            width=40,
+            height=22,
+            fg_color="#FF5722",
+            hover_color="#E64A19"
         )
-        btn_tone.pack(side="left", padx=(0, 10))
+        self.btn_pitch_old.pack(side="left", padx=(0, 2))
         
-        # Bypass Controls Section
-        bypass_section_title = CTK.CTkLabel(
-            content_frame,
-            text="Điều Khiển Plugin",
-            font=("Arial", 14, "bold"),
-            text_color="#FF9800"
+        self.btn_pitch_normal = CTK.CTkButton(
+            btn_frame,
+            text="0",
+            font=("Arial", 9, "bold"),
+            command=self._apply_pitch_normal,
+            width=30,
+            height=22,
+            fg_color="#9E9E9E",
+            hover_color="#757575"
         )
-        bypass_section_title.pack(pady=(0, 10))
+        self.btn_pitch_normal.pack(side="left", padx=(0, 2))
         
-        # Bypass controls frame
-        bypass_controls_frame = CTK.CTkFrame(content_frame, fg_color="#2B2B2B", corner_radius=8, border_width=1, border_color="#404040")
-        bypass_controls_frame.pack(fill="x", pady=(0, 10), padx=5)
-        
-        # Container for the 3 bypass toggles
-        toggles_container = CTK.CTkFrame(bypass_controls_frame, fg_color="transparent")
-        toggles_container.pack(pady=15, padx=15)
-        
-        # Configure grid for 4 columns
-        toggles_container.grid_columnconfigure(0, weight=1)
-        toggles_container.grid_columnconfigure(1, weight=1) 
-        toggles_container.grid_columnconfigure(2, weight=1)
-        toggles_container.grid_columnconfigure(3, weight=1)
-        
-        # 1. Auto-tune Bypass (Plugin Bypass)
-        autotune_frame = CTK.CTkFrame(toggles_container, fg_color="transparent")
-        autotune_frame.grid(row=0, column=0, padx=10, pady=5)
-        
-        autotune_label = CTK.CTkLabel(
-            autotune_frame,
-            text="Auto-tune",
-            font=("Arial", 10, "bold"),
-            text_color="#FFFFFF"
+        self.btn_pitch_young = CTK.CTkButton(
+            btn_frame,
+            text="TRẺ",
+            font=("Arial", 9, "bold"),
+            command=self._apply_pitch_young,
+            width=40,
+            height=22,
+            fg_color="#4CAF50",
+            hover_color="#45A049"
         )
-        autotune_label.pack(pady=(0, 5))
+        self.btn_pitch_young.pack(side="left", padx=(0, 3))
         
-        self.plugin_bypass_toggle = CTK.CTkSwitch(
-            autotune_frame,
-            text="",
-            command=lambda: self.bypass_manager.toggle_bypass('plugin'),
-            width=50,
-            height=24,
-            fg_color="#FF4444",
-            progress_color="#44FF44"
-        )
-        self.plugin_bypass_toggle.pack(pady=(0, 5))
-        
-        self.plugin_state_label = CTK.CTkLabel(
-            autotune_frame,
-            text="ON",
-            font=("Arial", 8, "bold"),
-            text_color="#44FF44",
-            fg_color="#2B2B2B",
-            corner_radius=3,
-            width=60,
-            height=20
-        )
-        self.plugin_state_label.pack()
-        
-        # 2. Tone nhạc (SoundShifter Bypass)
-        tone_nhac_frame = CTK.CTkFrame(toggles_container, fg_color="transparent")
-        tone_nhac_frame.grid(row=0, column=1, padx=10, pady=5)
-        
-        tone_nhac_label = CTK.CTkLabel(
-            tone_nhac_frame,
-            text="Tone nhạc",
-            font=("Arial", 10, "bold"),
-            text_color="#FFFFFF"
-        )
-        tone_nhac_label.pack(pady=(0, 5))
-        
-        self.soundshifter_bypass_toggle = CTK.CTkSwitch(
-            tone_nhac_frame,
-            text="",
-            command=lambda: self.bypass_manager.toggle_bypass('soundshifter'),
-            width=50,
-            height=24,
-            fg_color="#FF4444",
-            progress_color="#44FF44"
-        )
-        self.soundshifter_bypass_toggle.pack(pady=(0, 5))
-        
-        self.soundshifter_bypass_status_label = CTK.CTkLabel(
-            tone_nhac_frame,
-            text="ON",
-            font=("Arial", 8, "bold"),
-            text_color="#44FF44",
-            fg_color="#2B2B2B",
-            corner_radius=3,
-            width=60,
-            height=20
-        )
-        self.soundshifter_bypass_status_label.pack()
-        
-        # 3. Lofi (ProQ3 Bypass)
-        lofi_frame = CTK.CTkFrame(toggles_container, fg_color="transparent")
-        lofi_frame.grid(row=0, column=2, padx=10, pady=5)
-        
-        lofi_label = CTK.CTkLabel(
-            lofi_frame,
-            text="Lofi",
-            font=("Arial", 10, "bold"),
-            text_color="#FFFFFF"
-        )
-        lofi_label.pack(pady=(0, 5))
-        
-        self.proq3_bypass_toggle = CTK.CTkSwitch(
-            lofi_frame,
-            text="",
-            command=lambda: self.bypass_manager.toggle_bypass('proq3'),
-            width=50,
-            height=24,
-            fg_color="#FF4444",
-            progress_color="#44FF44"
-        )
-        self.proq3_bypass_toggle.pack(pady=(0, 5))
-        
-        self.proq3_bypass_status_label = CTK.CTkLabel(
-            lofi_frame,
-            text="ON",
-            font=("Arial", 8, "bold"),
-            text_color="#44FF44",
-            fg_color="#2B2B2B",
-            corner_radius=3,
-            width=60,
-            height=20
-        )
-        self.proq3_bypass_status_label.pack()
-        
-        # 4. Transpose (Chuyển Giọng)
-        transpose_frame = CTK.CTkFrame(toggles_container, fg_color="transparent")
-        transpose_frame.grid(row=0, column=3, padx=10, pady=5)
-        
-        transpose_label = CTK.CTkLabel(
-            transpose_frame,
-            text="Chuyển Giọng",
-            font=("Arial", 10, "bold"),
-            text_color="#FFFFFF"
-        )
-        transpose_label.pack(pady=(0, 5))
-        
-        # Transpose value display (compact)
         self.transpose_value_label = CTK.CTkLabel(
-            transpose_frame,
-            text="Giá trị: 0",
-            font=("Arial", 8),
+            btn_frame,
+            text="0",
+            font=("Arial", 9, "bold"),
             text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=3,
-            width=60,
-            height=20
+            width=25
         )
-        self.transpose_value_label.pack(pady=(0, 5))
+        self.transpose_value_label.pack(side="left", padx=(3, 0))
         
-        # Transpose slider (compact)
+        # Keep hidden slider for compatibility with batch reset code
         self.pitch_slider = CTK.CTkSlider(
             transpose_frame,
             from_=self.default_values.get('transpose_min', -12),
             to=self.default_values.get('transpose_max', 12),
             number_of_steps=abs(self.default_values.get('transpose_min', -12)) + abs(self.default_values.get('transpose_max', 12)),
             command=self._on_pitch_slider_change,
-            width=120,
-            height=16,
-            button_color="#9C27B0",
-            button_hover_color="#7B1FA2",
-            progress_color="#9C27B0"
+            width=0,
+            height=0
         )
         self.pitch_slider.set(self.default_values.get('transpose_default', 0))
-        self.pitch_slider.pack(pady=(0, 5))
+        # Don't pack the slider - keep it hidden
         
-        # Transpose Apply Button (compact)
-        btn_apply_pitch = CTK.CTkButton(
-            transpose_frame,
-            text="Áp Dụng",
-            font=("Arial", 8, "bold"),
-            command=self._apply_pitch_change,
-            width=60,
-            height=20,
-            fg_color="#9C27B0",
-            hover_color="#7B1FA2"
-        )
-        btn_apply_pitch.pack()
-        
-        # Separator
-        separator = CTK.CTkFrame(content_frame, height=2, fg_color="#404040")
-        separator.pack(fill="x", pady=(0, 10))
-        
-        # Music Presets Frame
-        presets_frame = CTK.CTkFrame(content_frame, fg_color="#2B2B2B", corner_radius=8, border_width=1, border_color="#404040")
-        presets_frame.pack(fill="x", pady=(0, 10), padx=5)
+        # Music Presets Frame - compact
+        presets_frame = CTK.CTkFrame(content_frame, fg_color="#2B2B2B", corner_radius=4, border_width=1, border_color="#404040")
+        presets_frame.pack(fill="x", pady=(0, 3), padx=0)
         
         # Setup Music Presets controls
         self._setup_music_presets_controls(presets_frame)
@@ -652,166 +322,172 @@ class CubaseAutoToolGUI:
     
     def _create_music_section(self, parent):
         """Tạo section Nhạc."""
-        # Section frame
-        section_frame = CTK.CTkFrame(parent, corner_radius=10, border_width=1, border_color="#404040")
-        section_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        # Section frame - minimal
+        section_frame = CTK.CTkFrame(parent, corner_radius=6, border_width=1, border_color="#404040")
+        section_frame.grid(row=0, column=1, sticky="nsew", padx=2, pady=2)
         
-        # Section title
+        # Header với title và toggle
+        header_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
+        header_frame.pack(fill="x", padx=5, pady=(5, 3))
+        
+        # Title
         title_label = CTK.CTkLabel(
-            section_frame,
+            header_frame,
             text="Nhạc",
-            font=("Arial", 16, "bold"),
-            text_color="#FF6B6B"
-        )
-        title_label.pack(pady=(10, 15))
-        
-        # Content frame
-        content_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        
-        # Tone nhạc Section Container
-        tone_nhac_container = CTK.CTkFrame(content_frame, fg_color="#1A1A1A", corner_radius=8, border_width=1, border_color="#FF6B6B")
-        tone_nhac_container.pack(fill="x", pady=(0, 10), padx=5)
-        
-        # Tone nhạc Title
-        tone_nhac_title = CTK.CTkLabel(
-            tone_nhac_container,
-            text="Tone nhạc",
             font=("Arial", 12, "bold"),
             text_color="#FF6B6B"
         )
-        tone_nhac_title.pack(pady=(10, 5))
+        title_label.pack(side="left")
         
-        # Current value display
-        self.soundshifter_value_label = CTK.CTkLabel(
-            tone_nhac_container,
-            text="Mức: 0 (Bình thường)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=160,
-            height=22
-        )
-        self.soundshifter_value_label.pack(pady=(0, 10))
+        # SoundShifter Toggle (right side)
+        toggle_container = CTK.CTkFrame(header_frame, fg_color="transparent")
+        toggle_container.pack(side="right")
         
-        # Tone nhạc Controls Frame
-        tone_nhac_controls = CTK.CTkFrame(tone_nhac_container, fg_color="transparent")
-        tone_nhac_controls.pack(pady=(0, 10))
-        
-        # Tone nhạc Buttons Row
-        tone_nhac_buttons = CTK.CTkFrame(tone_nhac_controls, fg_color="transparent")
-        tone_nhac_buttons.pack()
-        
-        # Hạ Tone Button (-)
-        btn_lower = CTK.CTkButton(
-            tone_nhac_buttons,
-            text="-",
-            font=("Arial", 14, "bold"),
-            command=self._lower_tone,
+        self.soundshifter_bypass_toggle = CTK.CTkSwitch(
+            toggle_container,
+            text="",
+            command=lambda: self.bypass_manager.toggle_bypass('soundshifter'),
             width=35,
-            height=30,
+            height=18,
+            fg_color="#FF4444",
+            progress_color="#44FF44"
+        )
+        self.soundshifter_bypass_toggle.pack(side="left", padx=(0, 3))
+        
+        self.soundshifter_bypass_status_label = CTK.CTkLabel(
+            toggle_container,
+            text="ON",
+            font=("Arial", 8, "bold"),
+            text_color="#44FF44",
+            width=25
+        )
+        self.soundshifter_bypass_status_label.pack(side="left")
+        
+        # Content frame - minimal
+        content_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
+        content_frame.pack(fill="both", expand=True, padx=5, pady=(0, 5))
+        
+        # Tone nhạc
+        tone_nhac_container = CTK.CTkFrame(content_frame, fg_color="#2B2B2B", corner_radius=4)
+        tone_nhac_container.pack(fill="x", pady=(0, 3))
+        
+        tone_nhac_inner = CTK.CTkFrame(tone_nhac_container, fg_color="transparent")
+        tone_nhac_inner.pack(pady=4, padx=4, fill="x")
+        
+        # Label
+        label = CTK.CTkLabel(tone_nhac_inner, text="Tone Nhạc", font=("Arial", 9))
+        label.pack(side="left")
+        
+        # Buttons right side
+        btn_frame = CTK.CTkFrame(tone_nhac_inner, fg_color="transparent")
+        btn_frame.pack(side="right")
+        
+        btn_lower = CTK.CTkButton(
+            btn_frame,
+            text="-",
+            font=("Arial", 12, "bold"),
+            command=self._lower_tone,
+            width=30,
+            height=22,
             fg_color="#FF5722",
             hover_color="#E64A19"
         )
-        btn_lower.pack(side="left", padx=(0, 5))
+        btn_lower.pack(side="left", padx=(0, 2))
         
-        # Reset Button
         btn_reset = CTK.CTkButton(
-            tone_nhac_buttons,
-            text="Reset",
+            btn_frame,
+            text="0",
             font=("Arial", 10, "bold"),
             command=self._reset_soundshifter,
-            width=80,
-            height=30,
+            width=30,
+            height=22,
             fg_color="#9E9E9E",
             hover_color="#757575"
         )
-        btn_reset.pack(side="left", padx=(0, 5))
+        btn_reset.pack(side="left", padx=(0, 2))
         
-        # Nâng Tone Button (+)
         btn_raise = CTK.CTkButton(
-            tone_nhac_buttons,
+            btn_frame,
             text="+",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 12, "bold"),
             command=self._raise_tone,
-            width=35,
-            height=30,
+            width=30,
+            height=22,
             fg_color="#4CAF50",
             hover_color="#45A049"
         )
-        btn_raise.pack(side="left")
+        btn_raise.pack(side="left", padx=(0, 3))
+        
+        self.soundshifter_value_label = CTK.CTkLabel(
+            btn_frame,
+            text="0",
+            font=("Arial", 9, "bold"),
+            text_color="#FFFFFF",
+            width=25
+        )
+        self.soundshifter_value_label.pack(side="left", padx=(3, 0))
         
 
         
-        # Separator
-        separator = CTK.CTkFrame(content_frame, height=2, fg_color="#404040")
-        separator.pack(fill="x", pady=(0, 15))
+        # Volume Section - no title, just controls
+        volume_container = CTK.CTkFrame(content_frame, fg_color="#2B2B2B", corner_radius=4)
+        volume_container.pack(fill="x", pady=(0, 3))
         
-        # Volume Section
-        volume_title = CTK.CTkLabel(
-            content_frame,
-            text="Âm Lượng Nhạc",
-            font=("Arial", 14, "bold"),
-            text_color="#FF9800"
-        )
-        volume_title.pack(pady=(0, 10))
+        volume_inner = CTK.CTkFrame(volume_container, fg_color="transparent")
+        volume_inner.pack(pady=4, padx=4, fill="x")
         
-        # Volume value display
-        self.volume_value_label = CTK.CTkLabel(
-            content_frame,
-            text="Âm lượng: -3 (Vừa)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=160,
-            height=22
-        )
-        self.volume_value_label.pack(pady=(0, 8))
+        # Volume label
+        vol_label = CTK.CTkLabel(volume_inner, text="Volume", font=("Arial", 9))
+        vol_label.pack(side="left")
         
-        # Volume slider
+        # Volume slider - compact
         self.volume_slider = CTK.CTkSlider(
-            content_frame,
+            volume_inner,
             from_=-7,
             to=0,
             number_of_steps=7,
-            width=200,
-            height=20,
+            width=80,
+            height=16,
             button_color="#FF9800",
             button_hover_color="#F57C00",
             progress_color="#FF9800",
-            fg_color="#2B2B2B",
+            fg_color="#1E1E1E",
             command=self._on_volume_slider_change
         )
-        self.volume_slider.set(-3)  # Default value
-        self.volume_slider.pack(pady=(0, 10))
+        self.volume_slider.set(-3)
+        self.volume_slider.pack(side="left", padx=(5, 5))
         
-        # Volume buttons frame
-        volume_buttons_frame = CTK.CTkFrame(content_frame, fg_color="transparent")
-        volume_buttons_frame.pack(pady=(0, 15))
+        # Value display
+        self.volume_value_label = CTK.CTkLabel(
+            volume_inner,
+            text="-3",
+            font=("Arial", 9, "bold"),
+            text_color="#FFFFFF",
+            width=25
+        )
+        self.volume_value_label.pack(side="left", padx=(0, 3))
         
-        # Volume Apply Button
+        # Apply Button
         self.volume_apply_btn = CTK.CTkButton(
-            volume_buttons_frame,
-            text="Áp Dụng",
-            font=("Arial", 10, "bold"),
+            volume_inner,
+            text="OK",
+            font=("Arial", 9, "bold"),
             command=self._apply_volume,
-            width=100,
-            height=30,
+            width=30,
+            height=22,
             fg_color="#FF9800",
             hover_color="#F57C00"
         )
-        self.volume_apply_btn.pack(side="left", padx=(0, 5))
+        self.volume_apply_btn.pack(side="left", padx=(0, 2))
         
-        # Mute Toggle Button
+        # Mute Button
         self.mute_toggle_btn = CTK.CTkButton(
-            volume_buttons_frame,
-            text="Mute",
-            font=("Arial", 10, "bold"),
+            volume_inner,
+            text="M",
+            font=("Arial", 9, "bold"),
             command=self._toggle_mute,
-            width=80,
-            height=30,
+            width=25,
+            height=22,
             fg_color="#E91E63",
             hover_color="#C2185B"
         )
@@ -819,35 +495,54 @@ class CubaseAutoToolGUI:
     
     def _create_vocal_section(self, parent):
         """Tạo section Giọng hát."""
-        # Section frame
-        section_frame = CTK.CTkFrame(parent, corner_radius=10, border_width=1, border_color="#404040")
-        section_frame.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
+        # Section frame - minimal
+        section_frame = CTK.CTkFrame(parent, corner_radius=6, border_width=1, border_color="#404040")
+        section_frame.grid(row=0, column=2, sticky="nsew", padx=2, pady=2)
         
-        # Section title
+        # Header với title và toggle
+        header_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
+        header_frame.pack(fill="x", padx=5, pady=(5, 3))
+        
+        # Title
         title_label = CTK.CTkLabel(
-            section_frame,
-            text="Giọng hát",
-            font=("Arial", 16, "bold"),
+            header_frame,
+            text="Mic",
+            font=("Arial", 12, "bold"),
             text_color="#FF6B6B"
         )
-        title_label.pack(pady=(10, 15))
+        title_label.pack(side="left")
         
-        # Content frame
-        content_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        # Lofi (ProQ3) Toggle (right side)
+        toggle_container = CTK.CTkFrame(header_frame, fg_color="transparent")
+        toggle_container.pack(side="right")
         
-        # Mic Controls Title
-        mic_controls_title = CTK.CTkLabel(
-            content_frame,
-            text="Điều Chỉnh Mic",
-            font=("Arial", 14, "bold"),
-            text_color="#00BCD4"
+        self.proq3_bypass_toggle = CTK.CTkSwitch(
+            toggle_container,
+            text="",
+            command=lambda: self.bypass_manager.toggle_bypass('proq3'),
+            width=35,
+            height=18,
+            fg_color="#FF4444",
+            progress_color="#44FF44"
         )
-        mic_controls_title.pack(pady=(0, 10))
+        self.proq3_bypass_toggle.pack(side="left", padx=(0, 3))
+        
+        self.proq3_bypass_status_label = CTK.CTkLabel(
+            toggle_container,
+            text="LOFI",
+            font=("Arial", 8, "bold"),
+            text_color="#44FF44",
+            width=30
+        )
+        self.proq3_bypass_status_label.pack(side="left")
+        
+        # Content frame - minimal
+        content_frame = CTK.CTkFrame(section_frame, fg_color="transparent")
+        content_frame.pack(fill="both", expand=True, padx=5, pady=(0, 5))
         
         # Mic controls grid frame (2x2 layout)
         mic_controls_grid = CTK.CTkFrame(content_frame, fg_color="transparent")
-        mic_controls_grid.pack(pady=(0, 15))
+        mic_controls_grid.pack(pady=(0, 0))
         
         # Configure grid for 2x2 layout (Bass, Treble, Volume, Reverb)
         mic_controls_grid.grid_columnconfigure(0, weight=1)
@@ -856,235 +551,211 @@ class CubaseAutoToolGUI:
         mic_controls_grid.grid_rowconfigure(1, weight=1)
         
         # === BASS CONTROL (Top Left) ===
-        bass_frame = CTK.CTkFrame(mic_controls_grid, fg_color="transparent")
-        bass_frame.grid(row=0, column=0, sticky="ew", padx=(0, 5), pady=(0, 5))
+        bass_frame = CTK.CTkFrame(mic_controls_grid, fg_color="#2B2B2B", corner_radius=4)
+        bass_frame.grid(row=0, column=0, sticky="ew", padx=(0, 3), pady=(0, 3))
         
-        bass_label = CTK.CTkLabel(
-            bass_frame,
-            text="Bass (LOW)",
-            font=("Arial", 11, "bold"),
-            text_color="#00BCD4"
-        )
-        bass_label.pack(pady=(0, 5))
+        bass_inner = CTK.CTkFrame(bass_frame, fg_color="transparent")
+        bass_inner.pack(pady=5, padx=5)
         
         # Bass value display
         self.bass_value_label = CTK.CTkLabel(
-            bass_frame,
+            bass_inner,
             text="Bass: 0",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=120,
-            height=22
-        )
-        self.bass_value_label.pack(pady=(0, 5))
-        
-        # Bass slider
-        self.bass_slider = CTK.CTkSlider(
-            bass_frame,
-            from_=-30,
-            to=30,
-            number_of_steps=60,
-            width=200,
-            height=20,
-            button_color="#00BCD4",
-            button_hover_color="#00ACC1",
-            progress_color="#00BCD4",
-            fg_color="#2B2B2B",
-            command=self._on_bass_slider_change
-        )
-        self.bass_slider.set(0)  # Default value
-        self.bass_slider.pack(pady=(0, 10))
-        
-        # Bass Apply Button
-        self.bass_apply_btn = CTK.CTkButton(
-            bass_frame,
-            text="Áp Dụng",
             font=("Arial", 9, "bold"),
-            command=self._apply_bass,
-            width=120,
-            height=25,
-            fg_color="#00BCD4",
-            hover_color="#00ACC1"
+            text_color="#FFFFFF",
+            width=60
         )
-        self.bass_apply_btn.pack()
+        self.bass_value_label.pack(side="left", padx=(0, 5))
+        
+        # Bass Decrease button
+        self.bass_decrease_btn = CTK.CTkButton(
+            bass_inner,
+            text="-",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_bass_instant(-1),
+            width=30,
+            height=22,
+            fg_color="#FF5722",
+            hover_color="#E64A19"
+        )
+        self.bass_decrease_btn.pack(side="left", padx=(0, 3))
+        
+        # Bass Increase button
+        self.bass_increase_btn = CTK.CTkButton(
+            bass_inner,
+            text="+",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_bass_instant(1),
+            width=30,
+            height=22,
+            fg_color="#4CAF50",
+            hover_color="#45A049"
+        )
+        self.bass_increase_btn.pack(side="left")
+        
+        # Keep hidden slider for internal state tracking
+        self.bass_slider = CTK.CTkSlider(bass_frame, width=0, height=0)
+        self.bass_slider.configure(from_=self.default_values.get('bass_min', -30),
+                                   to=self.default_values.get('bass_max', 30))
+        self.bass_slider.set(self.default_values.get('bass_default', 0))
         
         # === TREBLE CONTROL (Top Right) ===
-        treble_frame = CTK.CTkFrame(mic_controls_grid, fg_color="transparent")
-        treble_frame.grid(row=0, column=1, sticky="ew", padx=(5, 0), pady=(0, 5))
+        treble_frame = CTK.CTkFrame(mic_controls_grid, fg_color="#2B2B2B", corner_radius=4)
+        treble_frame.grid(row=0, column=1, sticky="ew", padx=(3, 0), pady=(0, 3))
         
-        treble_label = CTK.CTkLabel(
-            treble_frame,
-            text="Treble (HIGH)",
-            font=("Arial", 11, "bold"),
-            text_color="#00BCD4"
-        )
-        treble_label.pack(pady=(0, 5))
+        treble_inner = CTK.CTkFrame(treble_frame, fg_color="transparent")
+        treble_inner.pack(pady=5, padx=5)
         
         # Treble value display
         self.treble_value_label = CTK.CTkLabel(
-            treble_frame,
+            treble_inner,
             text="Treble: 0",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=120,
-            height=22
-        )
-        self.treble_value_label.pack(pady=(0, 5))
-        
-        # Treble slider
-        self.treble_slider = CTK.CTkSlider(
-            treble_frame,
-            from_=-20,
-            to=30,
-            number_of_steps=50,
-            width=200,
-            height=20,
-            button_color="#00BCD4",
-            button_hover_color="#00ACC1",
-            progress_color="#00BCD4",
-            fg_color="#2B2B2B",
-            command=self._on_treble_slider_change
-        )
-        self.treble_slider.set(0)  # Default value
-        self.treble_slider.pack(pady=(0, 10))
-        
-        # Treble Apply Button
-        self.treble_apply_btn = CTK.CTkButton(
-            treble_frame,
-            text="Áp Dụng",
             font=("Arial", 9, "bold"),
-            command=self._apply_treble,
-            width=120,
-            height=25,
-            fg_color="#00BCD4",
-            hover_color="#00ACC1"
+            text_color="#FFFFFF",
+            width=60
         )
-        self.treble_apply_btn.pack()
+        self.treble_value_label.pack(side="left", padx=(0, 5))
+        
+        # Treble Decrease button
+        self.treble_decrease_btn = CTK.CTkButton(
+            treble_inner,
+            text="-",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_treble_instant(-1),
+            width=30,
+            height=22,
+            fg_color="#FF5722",
+            hover_color="#E64A19"
+        )
+        self.treble_decrease_btn.pack(side="left", padx=(0, 3))
+        
+        # Treble Increase button
+        self.treble_increase_btn = CTK.CTkButton(
+            treble_inner,
+            text="+",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_treble_instant(1),
+            width=30,
+            height=22,
+            fg_color="#4CAF50",
+            hover_color="#45A049"
+        )
+        self.treble_increase_btn.pack(side="left")
+        
+        # Keep hidden slider for internal state tracking
+        self.treble_slider = CTK.CTkSlider(treble_frame, width=0, height=0)
+        self.treble_slider.configure(from_=self.default_values.get('treble_min', -20),
+                                     to=self.default_values.get('treble_max', 30))
+        self.treble_slider.set(self.default_values.get('treble_default', 0))
         
         # === VOLUME MIC CONTROL (Bottom Left) ===
-        volume_mic_frame = CTK.CTkFrame(mic_controls_grid, fg_color="transparent")
-        volume_mic_frame.grid(row=1, column=0, sticky="ew", padx=(0, 5), pady=(5, 0))
+        volume_mic_frame = CTK.CTkFrame(mic_controls_grid, fg_color="#2B2B2B", corner_radius=4)
+        volume_mic_frame.grid(row=1, column=0, sticky="ew", padx=(0, 3), pady=(3, 0))
         
-        volume_mic_label = CTK.CTkLabel(
-            volume_mic_frame,
-            text="Âm lượng Mic",
-            font=("Arial", 11, "bold"),
-            text_color="#FF69B4"
-        )
-        volume_mic_label.pack(pady=(0, 5))
+        volume_mic_inner = CTK.CTkFrame(volume_mic_frame, fg_color="transparent")
+        volume_mic_inner.pack(pady=5, padx=5)
         
         # COMP value display
         self.volume_mic_value_label = CTK.CTkLabel(
-            volume_mic_frame,
+            volume_mic_inner,
             text="COMP: 45",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=120,
-            height=22
-        )
-        self.volume_mic_value_label.pack(pady=(0, 5))
-        
-        # Volume slider
-        self.volume_mic_slider = CTK.CTkSlider(
-            volume_mic_frame,
-            from_=30,
-            to=60,
-            number_of_steps=30,
-            width=200,
-            height=20,
-            button_color="#FF69B4",
-            button_hover_color="#E91E63",
-            progress_color="#FF69B4",
-            fg_color="#2B2B2B",
-            command=self._on_volume_mic_slider_change
-        )
-        self.volume_mic_slider.set(45)  # Default value
-        self.volume_mic_slider.pack(pady=(0, 10))
-        
-        # Volume Apply Button
-        self.volume_mic_apply_btn = CTK.CTkButton(
-            volume_mic_frame,
-            text="Áp Dụng",
             font=("Arial", 9, "bold"),
-            command=self._apply_volume_mic,
-            width=120,
-            height=25,
-            fg_color="#FF69B4",
-            hover_color="#E91E63"
+            text_color="#FFFFFF",
+            width=60
         )
-        self.volume_mic_apply_btn.pack()
+        self.volume_mic_value_label.pack(side="left", padx=(0, 5))
+        
+        # Volume Mic Decrease button
+        self.volume_mic_decrease_btn = CTK.CTkButton(
+            volume_mic_inner,
+            text="-",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_volume_mic_instant(-1),
+            width=30,
+            height=22,
+            fg_color="#FF5722",
+            hover_color="#E64A19"
+        )
+        self.volume_mic_decrease_btn.pack(side="left", padx=(0, 3))
+        
+        # Volume Mic Increase button
+        self.volume_mic_increase_btn = CTK.CTkButton(
+            volume_mic_inner,
+            text="+",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_volume_mic_instant(1),
+            width=30,
+            height=22,
+            fg_color="#4CAF50",
+            hover_color="#45A049"
+        )
+        self.volume_mic_increase_btn.pack(side="left")
+        
+        # Keep hidden slider for internal state tracking
+        self.volume_mic_slider = CTK.CTkSlider(volume_mic_frame, width=0, height=0)
+        self.volume_mic_slider.configure(from_=self.default_values.get('xvox_volume_min', 30),
+                                         to=self.default_values.get('xvox_volume_max', 60))
+        self.volume_mic_slider.set(self.default_values.get('xvox_volume_default', 45))
         
         # === REVERB CONTROL (Bottom Right) ===
-        reverb_mic_frame = CTK.CTkFrame(mic_controls_grid, fg_color="transparent")
-        reverb_mic_frame.grid(row=1, column=1, sticky="ew", padx=(5, 0), pady=(5, 0))
+        reverb_mic_frame = CTK.CTkFrame(mic_controls_grid, fg_color="#2B2B2B", corner_radius=4)
+        reverb_mic_frame.grid(row=1, column=1, sticky="ew", padx=(3, 0), pady=(3, 0))
         
-        reverb_mic_label = CTK.CTkLabel(
-            reverb_mic_frame,
-            text="Độ vang Mic",
-            font=("Arial", 11, "bold"),
-            text_color="#00CED1"
-        )
-        reverb_mic_label.pack(pady=(0, 5))
+        reverb_mic_inner = CTK.CTkFrame(reverb_mic_frame, fg_color="transparent")
+        reverb_mic_inner.pack(pady=5, padx=5)
         
         # Reverb value display
         self.reverb_mic_value_label = CTK.CTkLabel(
-            reverb_mic_frame,
+            reverb_mic_inner,
             text="Reverb: 36",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=120,
-            height=22
-        )
-        self.reverb_mic_value_label.pack(pady=(0, 5))
-        
-        # Reverb slider
-        self.reverb_mic_slider = CTK.CTkSlider(
-            reverb_mic_frame,
-            from_=30,
-            to=42,
-            number_of_steps=12,
-            width=200,
-            height=20,
-            button_color="#00CED1",
-            button_hover_color="#00BCD4",
-            progress_color="#00CED1",
-            fg_color="#2B2B2B",
-            command=self._on_reverb_mic_slider_change
-        )
-        self.reverb_mic_slider.set(36)  # Default value
-        self.reverb_mic_slider.pack(pady=(0, 10))
-        
-        # Reverb Apply Button
-        self.reverb_mic_apply_btn = CTK.CTkButton(
-            reverb_mic_frame,
-            text="Áp Dụng",
             font=("Arial", 9, "bold"),
-            command=self._apply_reverb_mic,
-            width=120,
-            height=25,
-            fg_color="#00CED1",
-            hover_color="#00BCD4"
+            text_color="#FFFFFF",
+            width=60
         )
-        self.reverb_mic_apply_btn.pack()
+        self.reverb_mic_value_label.pack(side="left", padx=(0, 5))
+        
+        # Reverb Mic Decrease button
+        self.reverb_mic_decrease_btn = CTK.CTkButton(
+            reverb_mic_inner,
+            text="-",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_reverb_mic_instant(-1),
+            width=30,
+            height=22,
+            fg_color="#FF5722",
+            hover_color="#E64A19"
+        )
+        self.reverb_mic_decrease_btn.pack(side="left", padx=(0, 3))
+        
+        # Reverb Mic Increase button
+        self.reverb_mic_increase_btn = CTK.CTkButton(
+            reverb_mic_inner,
+            text="+",
+            font=("Arial", 12, "bold"),
+            command=lambda: self._adjust_reverb_mic_instant(1),
+            width=30,
+            height=22,
+            fg_color="#4CAF50",
+            hover_color="#45A049"
+        )
+        self.reverb_mic_increase_btn.pack(side="left")
+        
+        # Keep hidden slider for internal state tracking
+        self.reverb_mic_slider = CTK.CTkSlider(reverb_mic_frame, width=0, height=0)
+        self.reverb_mic_slider.configure(from_=self.default_values.get('reverb_min', 30),
+                                         to=self.default_values.get('reverb_max', 42))
+        self.reverb_mic_slider.set(self.default_values.get('reverb_default', 36))
         
 
         
 
     
     def _setup_music_presets_controls(self, parent):
-        """Thiết lập Music Presets controls với thiết kế đồng bộ."""
+        """Thiết lập Music Presets controls compact."""
         
-        # Padding cho toàn bộ section
+        # Padding minimal
         content_frame = CTK.CTkFrame(parent, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        content_frame.pack(fill="both", expand=True, padx=5, pady=5)
         
         # Initialize sliders for compatibility (hidden)
         self._init_hidden_sliders(content_frame)
@@ -1093,143 +764,131 @@ class CubaseAutoToolGUI:
         content_frame.grid_columnconfigure(0, weight=1)
         content_frame.grid_columnconfigure(1, weight=1)
         
-        # === NHẠC BOLERO SECTION (Left Column) ===
-        bolero_container = CTK.CTkFrame(content_frame, fg_color="#1A1A1A", corner_radius=8, border_width=1, border_color="#FF6B6B")
-        bolero_container.grid(row=0, column=0, sticky="nsew", padx=(0, 2), pady=5)
+        # === NHẠC BOLERO SECTION (Left Column) - Compact ===
+        bolero_container = CTK.CTkFrame(content_frame, fg_color="#1A1A1A", corner_radius=4, border_width=1, border_color="#FF6B6B")
+        bolero_container.grid(row=0, column=0, sticky="nsew", padx=(0, 2), pady=2)
         
+        bolero_inner = CTK.CTkFrame(bolero_container, fg_color="transparent")
+        bolero_inner.pack(pady=4, padx=4)
+        
+        # Title compact
         bolero_title = CTK.CTkLabel(
-            bolero_container,
-            text="Nhạc Bolero",
-            font=("Arial", 12, "bold"),
+            bolero_inner,
+            text="Bolero",
+            font=("Arial", 9, "bold"),
             text_color="#FF6B6B"
         )
-        bolero_title.pack(pady=(10, 5))
+        bolero_title.pack(side="left", padx=(0, 3))
         
-        # Bolero Level Display
-        self.bolero_level_label = CTK.CTkLabel(
-            bolero_container,
-            text="Mức: 0 (Bình thường)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=160,
-            height=22
-        )
-        self.bolero_level_label.pack(pady=(0, 10))
-        
-        # Bolero Controls Frame
-        bolero_controls = CTK.CTkFrame(bolero_container, fg_color="transparent")
-        bolero_controls.pack(pady=(0, 10))
-        
-        # Bolero Buttons Row
-        bolero_buttons = CTK.CTkFrame(bolero_controls, fg_color="transparent")
-        bolero_buttons.pack()
-        
+        # Controls inline
         self.bolero_minus_btn = CTK.CTkButton(
-            bolero_buttons,
+            bolero_inner,
             text="-",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 11, "bold"),
             command=lambda: self._adjust_music_preset('bolero', -1),
-            width=35,
-            height=30,
+            width=25,
+            height=20,
             fg_color="#FF5722",
             hover_color="#E64A19"
         )
-        self.bolero_minus_btn.pack(side="left", padx=(0, 5))
+        self.bolero_minus_btn.pack(side="left", padx=(0, 2))
+        
+        # Level display compact
+        self.bolero_level_label = CTK.CTkLabel(
+            bolero_inner,
+            text="0",
+            font=("Arial", 9),
+            text_color="#FFFFFF",
+            width=20
+        )
+        self.bolero_level_label.pack(side="left", padx=(0, 2))
+        
+        self.bolero_plus_btn = CTK.CTkButton(
+            bolero_inner,
+            text="+",
+            font=("Arial", 11, "bold"),
+            command=lambda: self._adjust_music_preset('bolero', 1),
+            width=25,
+            height=20,
+            fg_color="#4CAF50",
+            hover_color="#45A049"
+        )
+        self.bolero_plus_btn.pack(side="left", padx=(0, 2))
         
         self.bolero_apply_btn = CTK.CTkButton(
-            bolero_buttons,
-            text="Áp Dụng",
-            font=("Arial", 10, "bold"),
+            bolero_inner,
+            text="OK",
+            font=("Arial", 8, "bold"),
             command=lambda: self._apply_music_preset('bolero'),
-            width=80,
-            height=30,
+            width=30,
+            height=20,
             fg_color="#FF6B6B",
             hover_color="#FF5252"
         )
-        self.bolero_apply_btn.pack(side="left", padx=(0, 5))
+        self.bolero_apply_btn.pack(side="left")
         
-        self.bolero_plus_btn = CTK.CTkButton(
-            bolero_buttons,
-            text="+",
-            font=("Arial", 14, "bold"),
-            command=lambda: self._adjust_music_preset('bolero', 1),
-            width=35,
-            height=30,
-            fg_color="#4CAF50",
-            hover_color="#45A049"
-        )
-        self.bolero_plus_btn.pack(side="left")
+        # === NHẠC TRẺ SECTION (Right Column) - Compact ===
+        nhac_tre_container = CTK.CTkFrame(content_frame, fg_color="#1A1A1A", corner_radius=4, border_width=1, border_color="#32CD32")
+        nhac_tre_container.grid(row=0, column=1, sticky="nsew", padx=(2, 0), pady=2)
         
-        # === NHẠC TRẺ SECTION (Right Column) ===
-        nhac_tre_container = CTK.CTkFrame(content_frame, fg_color="#1A1A1A", corner_radius=8, border_width=1, border_color="#32CD32")
-        nhac_tre_container.grid(row=0, column=1, sticky="nsew", padx=(2, 0), pady=5)
+        nhac_tre_inner = CTK.CTkFrame(nhac_tre_container, fg_color="transparent")
+        nhac_tre_inner.pack(pady=4, padx=4)
         
+        # Title compact
         nhac_tre_title = CTK.CTkLabel(
-            nhac_tre_container,
+            nhac_tre_inner,
             text="Nhạc Trẻ",
-            font=("Arial", 12, "bold"),
+            font=("Arial", 9, "bold"),
             text_color="#32CD32"
         )
-        nhac_tre_title.pack(pady=(10, 5))
+        nhac_tre_title.pack(side="left", padx=(0, 3))
         
-        # Nhạc Trẻ Level Display
-        self.nhac_tre_level_label = CTK.CTkLabel(
-            nhac_tre_container,
-            text="Mức: 0 (Bình thường)",
-            font=("Arial", 10),
-            text_color="#FFFFFF",
-            fg_color="#2B2B2B",
-            corner_radius=4,
-            width=160,
-            height=22
-        )
-        self.nhac_tre_level_label.pack(pady=(0, 10))
-        
-        # Nhạc Trẻ Controls Frame
-        nhac_tre_controls = CTK.CTkFrame(nhac_tre_container, fg_color="transparent")
-        nhac_tre_controls.pack(pady=(0, 10))
-        
-        # Nhạc Trẻ Buttons Row
-        nhac_tre_buttons = CTK.CTkFrame(nhac_tre_controls, fg_color="transparent")
-        nhac_tre_buttons.pack()
-        
+        # Controls inline
         self.nhac_tre_minus_btn = CTK.CTkButton(
-            nhac_tre_buttons,
+            nhac_tre_inner,
             text="-",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 11, "bold"),
             command=lambda: self._adjust_music_preset('nhac_tre', -1),
-            width=35,
-            height=30,
+            width=25,
+            height=20,
             fg_color="#FF5722",
             hover_color="#E64A19"
         )
-        self.nhac_tre_minus_btn.pack(side="left", padx=(0, 5))
+        self.nhac_tre_minus_btn.pack(side="left", padx=(0, 2))
         
-        self.nhac_tre_apply_btn = CTK.CTkButton(
-            nhac_tre_buttons,
-            text="Áp Dụng",
-            font=("Arial", 10, "bold"),
-            command=lambda: self._apply_music_preset('nhac_tre'),
-            width=80,
-            height=30,
-            fg_color="#32CD32",
-            hover_color="#228B22"
+        # Level display compact
+        self.nhac_tre_level_label = CTK.CTkLabel(
+            nhac_tre_inner,
+            text="0",
+            font=("Arial", 9),
+            text_color="#FFFFFF",
+            width=20
         )
-        self.nhac_tre_apply_btn.pack(side="left", padx=(0, 5))
+        self.nhac_tre_level_label.pack(side="left", padx=(0, 2))
         
         self.nhac_tre_plus_btn = CTK.CTkButton(
-            nhac_tre_buttons,
+            nhac_tre_inner,
             text="+",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 11, "bold"),
             command=lambda: self._adjust_music_preset('nhac_tre', 1),
-            width=35,
-            height=30,
+            width=25,
+            height=20,
             fg_color="#4CAF50",
             hover_color="#45A049"
         )
-        self.nhac_tre_plus_btn.pack(side="left")
+        self.nhac_tre_plus_btn.pack(side="left", padx=(0, 2))
+        
+        self.nhac_tre_apply_btn = CTK.CTkButton(
+            nhac_tre_inner,
+            text="OK",
+            font=("Arial", 8, "bold"),
+            command=lambda: self._apply_music_preset('nhac_tre'),
+            width=30,
+            height=20,
+            fg_color="#32CD32",
+            hover_color="#228B22"
+        )
+        self.nhac_tre_apply_btn.pack(side="left")
         
         # Update initial display
         self._update_music_preset_display('bolero')
@@ -1284,64 +943,55 @@ class CubaseAutoToolGUI:
         self.humanize_value_label = CTK.CTkLabel(hidden_frame, text="")
     
     def _setup_footer(self):
-        """Thiết lập footer đơn giản."""
-        # Footer container
-        footer_container = CTK.CTkFrame(self.root, fg_color="#1F1F1F", corner_radius=0, height=40)
+        """Thiết lập footer compact."""
+        # Footer container - minimal height
+        footer_container = CTK.CTkFrame(self.root, fg_color="#1F1F1F", corner_radius=0, height=25)
         footer_container.pack(side="bottom", fill="x", padx=0, pady=0)
-        footer_container.pack_propagate(False)  # Maintain fixed height
+        footer_container.pack_propagate(False)
         
         footer_frame = CTK.CTkFrame(footer_container, fg_color="transparent")
-        footer_frame.pack(fill="both", expand=True, padx=15, pady=5)
+        footer_frame.pack(fill="both", expand=True, padx=8, pady=3)
         
-        # App version (left side)
+        # App version (left side) - smaller
         version_label = CTK.CTkLabel(
             footer_frame,
-            text=f"{config.APP_NAME} {config.APP_VERSION}",
-            font=("Arial", 10),
+            text=f"{config.APP_VERSION}",
+            font=("Arial", 8),
             text_color="gray"
         )
         version_label.pack(side="left")
         
-        # Theme switcher (center)
+        # Theme switcher - minimal
         self.theme_button = CTK.CTkButton(
             footer_frame,
-            text="Theme",
+            text="T",
             command=self._toggle_theme,
-            width=60,
-            height=20,
-            font=("Arial", 10),
-            corner_radius=4
+            width=25,
+            height=18,
+            font=("Arial", 8),
+            corner_radius=3
         )
-        self.theme_button.pack(side="left", padx=(10, 0))
+        self.theme_button.pack(side="left", padx=(5, 0))
         
-        # Debug button (next to theme)
+        # Debug button - minimal
         self.debug_button = CTK.CTkButton(
             footer_frame,
-            text="Debug",
+            text="D",
             command=self._show_debug_window,
-            width=60,
-            height=20,
-            font=("Arial", 10),
-            corner_radius=4,
+            width=25,
+            height=18,
+            font=("Arial", 8),
+            corner_radius=3,
             fg_color="#FF9800",
             hover_color="#F57C00"
         )
-        self.debug_button.pack(side="left", padx=(5, 0))
+        self.debug_button.pack(side="left", padx=(2, 0))
         
-        # Hotkeys info (center)
-        hotkeys_label = CTK.CTkLabel(
-            footer_frame,
-            text="Ctrl+T: Theme | Ctrl+Shift+T: Always on Top",
-            font=("Arial", 8),
-            text_color="#888888"
-        )
-        hotkeys_label.pack(side="left", padx=(15, 0))
-        
-        # Copyright information (right side) - clickable
+        # Copyright (right side) - smaller
         copyright_label = CTK.CTkLabel(
             footer_frame,
             text=config.COPYRIGHT,
-            font=("Arial", 14, "bold"),
+            font=("Arial", 10, "bold"),
             text_color="#FF6B6B",
             cursor="hand2"
         )
@@ -1366,7 +1016,7 @@ class CubaseAutoToolGUI:
     def update_current_tone(self, tone_text):
         """Cập nhật hiển thị tone hiện tại."""
         if self.current_tone_label:
-            self.current_tone_label.configure(text=f"Tone hiện tại: {tone_text}")
+            self.current_tone_label.configure(text=tone_text)
         # Cập nhật tone hiện tại để so sánh trong auto detect
         self.current_detected_tone = tone_text
     
@@ -1526,9 +1176,9 @@ class CubaseAutoToolGUI:
         """Xử lý khi pitch slider thay đổi."""
         pitch_value = int(round(value))
         
-        # Cập nhật label với format ngắn gọn
+        # Cập nhật label với format ngắn gọn - chỉ hiển thị số
         if self.transpose_value_label:
-            self.transpose_value_label.configure(text=f"Giá trị: {pitch_value}")
+            self.transpose_value_label.configure(text=str(pitch_value))
     
     def _on_return_speed_slider_change(self, value):
         """Xử lý khi return speed slider thay đổi."""
@@ -1615,6 +1265,84 @@ class CubaseAutoToolGUI:
             print(f"❌ Error in pitch adjustment: {e}")
         finally:
             # Resume auto-detect
+            self.resume_auto_detect_after_manual_action()
+    
+    def _apply_pitch_old(self):
+        """Áp dụng giọng Già (Old voice)."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            # Lấy giá trị Già từ config
+            old_value = self.default_values.get('transpose_old', -7)
+            
+            print(f"🎵 Applying Old voice (Già): {old_value}")
+            
+            # Thực hiện chỉnh pitch
+            success = self.transpose_detector.set_pitch_value(old_value)
+            
+            if success:
+                # Cập nhật slider và label
+                self.pitch_slider.set(old_value)
+                self._on_pitch_slider_change(old_value)
+                print(f"✅ Old voice applied successfully: {old_value}")
+            else:
+                print(f"❌ Failed to apply Old voice: {old_value}")
+                
+        except Exception as e:
+            print(f"❌ Error applying Old voice: {e}")
+        finally:
+            self.resume_auto_detect_after_manual_action()
+    
+    def _apply_pitch_normal(self):
+        """Áp dụng giọng Bình thường (Normal voice)."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            # Giá trị bình thường = 0
+            normal_value = 0
+            
+            print(f"🎵 Applying Normal voice (Bình thường): {normal_value}")
+            
+            # Thực hiện chỉnh pitch
+            success = self.transpose_detector.set_pitch_value(normal_value)
+            
+            if success:
+                # Cập nhật slider và label
+                self.pitch_slider.set(normal_value)
+                self._on_pitch_slider_change(normal_value)
+                print(f"✅ Normal voice applied successfully: {normal_value}")
+            else:
+                print(f"❌ Failed to apply Normal voice: {normal_value}")
+                
+        except Exception as e:
+            print(f"❌ Error applying Normal voice: {e}")
+        finally:
+            self.resume_auto_detect_after_manual_action()
+    
+    def _apply_pitch_young(self):
+        """Áp dụng giọng Trẻ (Young voice)."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            # Lấy giá trị Trẻ từ config
+            young_value = self.default_values.get('transpose_young', 12)
+            
+            print(f"🎵 Applying Young voice (Trẻ): {young_value}")
+            
+            # Thực hiện chỉnh pitch
+            success = self.transpose_detector.set_pitch_value(young_value)
+            
+            if success:
+                # Cập nhật slider và label
+                self.pitch_slider.set(young_value)
+                self._on_pitch_slider_change(young_value)
+                print(f"✅ Young voice applied successfully: {young_value}")
+            else:
+                print(f"❌ Failed to apply Young voice: {young_value}")
+                
+        except Exception as e:
+            print(f"❌ Error applying Young voice: {e}")
+        finally:
             self.resume_auto_detect_after_manual_action()
     
     def _apply_return_speed_change(self):
@@ -1817,9 +1545,8 @@ class CubaseAutoToolGUI:
         """Callback khi volume slider thay đổi - chỉ cập nhật display."""
         volume_value = int(value)
         
-        # Chỉ cập nhật display, không thực hiện action
-        description = self.volume_detector.get_volume_description(volume_value)
-        self.volume_value_label.configure(text=f"Âm lượng: {volume_value} ({description})")
+        # Chỉ cập nhật display, compact format
+        self.volume_value_label.configure(text=str(volume_value))
     
     def _apply_volume(self):
         """Áp dụng thay đổi Volume khi nhấn nút Áp Dụng."""
@@ -1881,6 +1608,41 @@ class CubaseAutoToolGUI:
         # Chỉ cập nhật display, không thực hiện action
         self.bass_value_label.configure(text=f"Bass: {bass_value}")
     
+    def _adjust_bass_instant(self, direction):
+        """Điều chỉnh bass và áp dụng ngay lập tức."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            current_value = int(round(self.bass_slider.get()))
+            step = self.default_values.get('bass_step', 5)
+            min_value = self.default_values.get('bass_min', -30)
+            max_value = self.default_values.get('bass_max', 30)
+            
+            # Tính giá trị mới
+            new_value = current_value + (step * direction)
+            
+            # Giới hạn trong range
+            new_value = max(min_value, min(max_value, new_value))
+            
+            # Cập nhật slider và label
+            self.bass_slider.set(new_value)
+            self.bass_value_label.configure(text=f"Bass: {new_value}")
+            
+            print(f"🎚️ Adjusting Bass to: {new_value} (step: {step})")
+            
+            # Áp dụng ngay lập tức
+            success = self.xvox_detector.set_bass_value(new_value)
+            
+            if success:
+                print(f"✅ Bass applied successfully: {new_value}")
+            else:
+                print(f"❌ Failed to apply bass: {new_value}")
+                
+        except Exception as e:
+            print(f"❌ Error adjusting bass: {e}")
+        finally:
+            self.resume_auto_detect_after_manual_action()
+    
     def _apply_bass(self):
         """Áp dụng thay đổi Bass khi nhấn nút Áp Dụng."""
         # Pause auto-detect during operation
@@ -1912,6 +1674,41 @@ class CubaseAutoToolGUI:
         
         # Chỉ cập nhật display, không thực hiện action
         self.treble_value_label.configure(text=f"Treble: {treble_value}")
+    
+    def _adjust_treble_instant(self, direction):
+        """Điều chỉnh treble và áp dụng ngay lập tức."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            current_value = int(round(self.treble_slider.get()))
+            step = self.default_values.get('treble_step', 5)
+            min_value = self.default_values.get('treble_min', -20)
+            max_value = self.default_values.get('treble_max', 30)
+            
+            # Tính giá trị mới
+            new_value = current_value + (step * direction)
+            
+            # Giới hạn trong range
+            new_value = max(min_value, min(max_value, new_value))
+            
+            # Cập nhật slider và label
+            self.treble_slider.set(new_value)
+            self.treble_value_label.configure(text=f"Treble: {new_value}")
+            
+            print(f"🎚️ Adjusting Treble to: {new_value} (step: {step})")
+            
+            # Áp dụng ngay lập tức
+            success = self.xvox_detector.set_treble_value(new_value)
+            
+            if success:
+                print(f"✅ Treble applied successfully: {new_value}")
+            else:
+                print(f"❌ Failed to apply treble: {new_value}")
+                
+        except Exception as e:
+            print(f"❌ Error adjusting treble: {e}")
+        finally:
+            self.resume_auto_detect_after_manual_action()
     
     def _apply_treble(self):
         """Áp dụng thay đổi Treble khi nhấn nút Áp Dụng."""
@@ -1945,6 +1742,41 @@ class CubaseAutoToolGUI:
         # Chỉ cập nhật display, không thực hiện action
         self.volume_mic_value_label.configure(text=f"COMP: {volume_value}")
     
+    def _adjust_volume_mic_instant(self, direction):
+        """Điều chỉnh volume mic (COMP) và áp dụng ngay lập tức."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            current_value = int(round(self.volume_mic_slider.get()))
+            step = self.default_values.get('xvox_volume_step', 5)
+            min_value = self.default_values.get('xvox_volume_min', 30)
+            max_value = self.default_values.get('xvox_volume_max', 60)
+            
+            # Tính giá trị mới
+            new_value = current_value + (step * direction)
+            
+            # Giới hạn trong range
+            new_value = max(min_value, min(max_value, new_value))
+            
+            # Cập nhật slider và label
+            self.volume_mic_slider.set(new_value)
+            self.volume_mic_value_label.configure(text=f"COMP: {new_value}")
+            
+            print(f"🎚️ Adjusting Volume Mic to: {new_value} (step: {step})")
+            
+            # Áp dụng ngay lập tức
+            success = self.xvox_detector.set_comp_value(new_value)
+            
+            if success:
+                print(f"✅ Volume Mic applied successfully: {new_value}")
+            else:
+                print(f"❌ Failed to apply volume mic: {new_value}")
+                
+        except Exception as e:
+            print(f"❌ Error adjusting volume mic: {e}")
+        finally:
+            self.resume_auto_detect_after_manual_action()
+    
     def _apply_volume_mic(self):
         """Áp dụng thay đổi COMP (Compressor) khi nhấn nút Áp Dụng."""
         # Pause auto-detect during operation
@@ -1976,6 +1808,41 @@ class CubaseAutoToolGUI:
         
         # Chỉ cập nhật display, không thực hiện action
         self.reverb_mic_value_label.configure(text=f"Reverb: {reverb_value}")
+    
+    def _adjust_reverb_mic_instant(self, direction):
+        """Điều chỉnh reverb mic và áp dụng ngay lập tức."""
+        self.pause_auto_detect_for_manual_action()
+        
+        try:
+            current_value = int(round(self.reverb_mic_slider.get()))
+            step = self.default_values.get('reverb_step', 2)
+            min_value = self.default_values.get('reverb_min', 30)
+            max_value = self.default_values.get('reverb_max', 42)
+            
+            # Tính giá trị mới
+            new_value = current_value + (step * direction)
+            
+            # Giới hạn trong range
+            new_value = max(min_value, min(max_value, new_value))
+            
+            # Cập nhật slider và label
+            self.reverb_mic_slider.set(new_value)
+            self.reverb_mic_value_label.configure(text=f"Reverb: {new_value}")
+            
+            print(f"🎚️ Adjusting Reverb Mic to: {new_value} (step: {step})")
+            
+            # Áp dụng ngay lập tức
+            success = self.xvox_detector.set_reverb_value(new_value)
+            
+            if success:
+                print(f"✅ Reverb Mic applied successfully: {new_value}")
+            else:
+                print(f"❌ Failed to apply reverb mic: {new_value}")
+                
+        except Exception as e:
+            print(f"❌ Error adjusting reverb mic: {e}")
+        finally:
+            self.resume_auto_detect_after_manual_action()
     
     def _apply_reverb_mic(self):
         """Áp dụng thay đổi Reverb Mic khi nhấn nút Áp Dụng."""
@@ -2082,8 +1949,7 @@ class CubaseAutoToolGUI:
         """Cập nhật hiển thị giá trị Tone nhạc."""
         if self.soundshifter_value_label:
             current_value = self.soundshifter_detector.current_value
-            description = self.soundshifter_detector.get_tone_description(current_value)
-            self.soundshifter_value_label.configure(text=f"Mức: {current_value} ({description})")
+            self.soundshifter_value_label.configure(text=str(current_value))
     
     def _toggle_theme(self):
         """Chuyển đổi theme giữa dark và light."""
@@ -2175,13 +2041,13 @@ class CubaseAutoToolGUI:
             print(f"❌ Error adjusting {music_type} preset: {e}")
     
     def _update_music_preset_display(self, music_type):
-        """Cập nhật hiển thị mức preset hiện tại."""
+        """Cập nhật hiển thị mức preset hiện tại - compact format."""
         try:
             current_level = self.music_presets_manager.get_current_level(music_type)
-            level_desc = self.music_presets_manager.get_level_description(current_level)
             level_str = self.music_presets_manager.get_level_string(current_level)
             
-            display_text = f"Mức: {level_str} ({level_desc})"
+            # Compact: just show the level number/string
+            display_text = str(level_str)
             
             if music_type == 'bolero' and hasattr(self, 'bolero_level_label'):
                 self.bolero_level_label.configure(text=display_text)

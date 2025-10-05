@@ -11,13 +11,8 @@ class OCRHelper:
     
     @staticmethod
     def setup_tesseract():
-        """Cấu hình Tesseract."""
-        print(f"🔧 Setting up Tesseract...")
-        print(f"   TESSERACT_PATH: {config.TESSERACT_PATH}")
-        print(f"   TESSDATA_DIR: {config.TESSDATA_DIR}")
-        print(f"   Tesseract exists: {os.path.exists(config.TESSERACT_PATH)}")
-        print(f"   Tessdata exists: {os.path.exists(config.TESSDATA_DIR)}")
-        
+        """Cấu hình Tesseract (silent mode)."""
+        # Silent setup - only configure paths without verbose logging
         pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
         os.environ["TESSDATA_PREFIX"] = config.TESSDATA_DIR
     

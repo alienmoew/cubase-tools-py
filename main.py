@@ -1,5 +1,5 @@
-from gui import CubaseAutoToolGUI
+from gui import MainWindow
 
 if __name__ == "__main__":
-    app = CubaseAutoToolGUI()
+    app = MainWindow()
     app.run()

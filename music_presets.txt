@@ -19,7 +19,7 @@ nhac_tre:+2:90:80:10:85
 nhac_tre:+1:75:65:7:70
 nhac_tre:0:2:2:2:2
 nhac_tre:-1:45:30:3:30
-nhac_tre:-2:30:20:1:20
+nhac_tre:-2:2:2:2:2
 
 # Preset descriptions:
 # +2: Maximum intensity (Cực mạnh)

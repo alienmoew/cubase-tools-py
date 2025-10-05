@@ -11,14 +11,9 @@ class BaseFeature(ABC):
     def ensure_directories(self):
         """Tạo các thư mục cần thiết."""
         try:
-            print(f"🔧 Ensuring directories...")
-            print(f"   RESULT_DIR: {config.RESULT_DIR}")
-            print(f"   DATA_DIR: {config.DATA_DIR}")
-            
+            # Silent directory creation - only create if not exists
             os.makedirs(config.RESULT_DIR, exist_ok=True)
             os.makedirs(config.DATA_DIR, exist_ok=True)
-            
-            print(f"✅ Directories ensured successfully")
         except Exception as e:
             print(f"⚠️ Error ensuring directories: {e}")
     

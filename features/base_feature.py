@@ -10,8 +10,12 @@ class BaseFeature(ABC):
     
     def ensure_directories(self):
         """Tạo các thư mục cần thiết."""
-        os.makedirs(config.RESULT_DIR, exist_ok=True)
-        os.makedirs(config.DATA_DIR, exist_ok=True)
+        try:
+            # Silent directory creation - only create if not exists
+            os.makedirs(config.RESULT_DIR, exist_ok=True)
+            os.makedirs(config.DATA_DIR, exist_ok=True)
+        except Exception as e:
+            print(f"⚠️ Error ensuring directories: {e}")
     
     @abstractmethod
     def execute(self):

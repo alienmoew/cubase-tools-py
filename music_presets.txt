@@ -1,0 +1,28 @@
+# Music Presets Configuration
+# Format: music_type:level:return_speed:flex_tune:natural_vibrato:humanize
+#
+# Levels: +2, +1, -1, -2
+# Return Speed: 0-100
+# Flex Tune: 0-100  
+# Natural Vibrato: -12 to +12
+# Humanize: 0-100
+
+# Nhạc Bolero Presets - phong cách êm dịu, da diết
+bolero:+2:85:75:8:80
+bolero:+1:70:60:6:65
+bolero:0:1:1:1:1
+bolero:-1:40:25:2:25
+bolero:-2:25:15:0:15
+
+# Nhạc trẻ Presets - phong cách sôi động, năng lượng
+nhac_tre:+2:90:80:10:85
+nhac_tre:+1:75:65:7:70
+nhac_tre:0:2:2:2:2
+nhac_tre:-1:45:30:3:30
+nhac_tre:-2:2:2:2:2
+
+# Preset descriptions:
+# +2: Maximum intensity (Cực mạnh)
+# +1: High intensity (Mạnh) 
+# -1: Low intensity (Nhẹ)
+# -2: Minimum intensity (Cực nhẹ)

@@ -51,7 +51,7 @@ class MainWindow:
         # Create root window
         self.root = CTK.CTk()
         self.root.title(f"{config.APP_NAME} {config.APP_VERSION}")
-        self.root.geometry("850x480")  # Increased size for better fit
+        self.root.geometry("1000x250")  # Increased size for better fit
         self.root.resizable(False, False)
         
         # Window state

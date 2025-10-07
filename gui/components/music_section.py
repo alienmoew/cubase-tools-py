@@ -42,21 +42,21 @@ class MusicSection(BaseComponent):
     
     def _create_header(self):
         """Tạo header với title và bypass toggle."""
-        header_frame = CTK.CTkFrame(self.container, fg_color="transparent")
-        header_frame.pack(fill="x", padx=5, pady=(5, 3))
+        header_frame = CTK.CTkFrame(self.container, fg_color="#1E1E1E", corner_radius=4)
+        header_frame.pack(fill="x", padx=4, pady=4)
         
         # Title
         title_label = CTK.CTkLabel(
             header_frame,
-            text="Nhạc",
+            text="Tone Nhạc",
             font=("Arial", 11, "bold"),
-            text_color="#FF6B6B"
+            text_color="#FFFFFF"
         )
-        title_label.pack(side="left")
+        title_label.pack(side="left", padx=8, pady=4)
         
         # SoundShifter Toggle (right side)
         toggle_container = CTK.CTkFrame(header_frame, fg_color="transparent")
-        toggle_container.pack(side="right")
+        toggle_container.pack(side="right", padx=8)
         
         self.soundshifter_bypass_toggle = CTK.CTkSwitch(
             toggle_container,
@@ -64,16 +64,16 @@ class MusicSection(BaseComponent):
             command=lambda: self.main_window.bypass_manager.toggle_bypass('soundshifter'),
             width=35,
             height=18,
-            fg_color="#FF4444",
-            progress_color="#44FF44"
+            fg_color="#666666",
+            progress_color="#4CAF50"
         )
-        self.soundshifter_bypass_toggle.pack(side="left", padx=(0, 3))
+        self.soundshifter_bypass_toggle.pack(side="left", padx=(0, 5))
         
         self.soundshifter_bypass_status_label = CTK.CTkLabel(
             toggle_container,
             text="ON",
-            font=("Arial", 8, "bold"),
-            text_color="#44FF44",
+            font=("Arial", 9, "bold"),
+            text_color="#4CAF50",
             width=25
         )
         self.soundshifter_bypass_status_label.pack(side="left")
@@ -81,13 +81,13 @@ class MusicSection(BaseComponent):
     def _create_tone_controls(self, parent):
         """Tạo tone nhạc controls."""
         tone_nhac_container = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
-        tone_nhac_container.pack(fill="x", pady=(0, 2))
+        tone_nhac_container.pack(fill="x", pady=2, padx=4)
         
         tone_nhac_inner = CTK.CTkFrame(tone_nhac_container, fg_color="transparent")
-        tone_nhac_inner.pack(pady=4, padx=4, fill="x")
+        tone_nhac_inner.pack(pady=6, padx=6, fill="x")
         
         # Label
-        label = CTK.CTkLabel(tone_nhac_inner, text="Tone Nhạc", font=("Arial", 9))
+        label = CTK.CTkLabel(tone_nhac_inner, text="Tone Nhạc", font=("Arial", 10), text_color="#AAAAAA")
         label.pack(side="left")
         
         # Buttons right side
@@ -99,69 +99,68 @@ class MusicSection(BaseComponent):
             text="-",
             font=("Arial", 12, "bold"),
             command=self._lower_tone,
-            width=30,
-            height=22,
-            fg_color="#FF5722",
-            hover_color="#E64A19"
+            width=32,
+            height=24,
+            fg_color="#EF6C00",
+            hover_color="#E65100"
         )
-        btn_lower.pack(side="left", padx=(0, 2))
+        btn_lower.pack(side="left", padx=(0, 3))
         
         btn_reset = CTK.CTkButton(
             btn_frame,
             text="0",
             font=("Arial", 10, "bold"),
             command=self._reset_soundshifter,
-            width=30,
-            height=22,
-            fg_color="#9E9E9E",
-            hover_color="#757575"
+            width=32,
+            height=24,
+            fg_color="#757575",
+            hover_color="#616161"
         )
-        btn_reset.pack(side="left", padx=(0, 2))
+        btn_reset.pack(side="left", padx=(0, 3))
         
         btn_raise = CTK.CTkButton(
             btn_frame,
             text="+",
             font=("Arial", 12, "bold"),
             command=self._raise_tone,
-            width=30,
-            height=22,
+            width=32,
+            height=24,
             fg_color="#4CAF50",
-            hover_color="#45A049"
+            hover_color="#388E3C"
         )
-        btn_raise.pack(side="left", padx=(0, 3))
+        btn_raise.pack(side="left", padx=(0, 8))
         
         self.soundshifter_value_label = CTK.CTkLabel(
             btn_frame,
             text="0",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 10, "bold"),
             text_color="#FFFFFF",
-            width=25
+            width=30
         )
-        self.soundshifter_value_label.pack(side="left", padx=(3, 0))
+        self.soundshifter_value_label.pack(side="left", padx=(0, 0))
     
     def _create_volume_controls(self, parent):
         """Tạo volume controls."""
         volume_container = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
-        volume_container.pack(fill="x", pady=(0, 2))
+        volume_container.pack(fill="x", pady=2, padx=4)
         
         volume_inner = CTK.CTkFrame(volume_container, fg_color="transparent")
-        volume_inner.pack(pady=4, padx=4, fill="x")
+        volume_inner.pack(pady=6, padx=6, fill="x")
         
         # Volume label
-        vol_label = CTK.CTkLabel(volume_inner, text="Volume", font=("Arial", 9))
-        vol_label.pack(side="left", padx=(0, 5))
+        vol_label = CTK.CTkLabel(volume_inner, text="Volume", font=("Arial", 10), text_color="#AAAAAA")
+        vol_label.pack(side="left", padx=(0, 8))
         
         # Decrease button
         btn_decrease = CTK.CTkButton(
             volume_inner,
             text="-",
-            font=("Arial", 10, "bold"),
+            font=("Arial", 11, "bold"),
             command=self._decrease_volume,
-            width=25,
-            height=22,
-            fg_color="#FF9800",
-            hover_color="#F57C00",
-            text_color="#000000"
+            width=32,
+            height=24,
+            fg_color="#EF6C00",
+            hover_color="#E65100"
         )
         btn_decrease.pack(side="left", padx=(0, 3))
         
@@ -169,38 +168,37 @@ class MusicSection(BaseComponent):
         self.volume_value_label = CTK.CTkLabel(
             volume_inner,
             text="0%",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 10, "bold"),
             text_color="#FFFFFF",
-            width=40
+            width=45
         )
-        self.volume_value_label.pack(side="left", padx=3)
+        self.volume_value_label.pack(side="left", padx=0)
         
         # Increase button
         btn_increase = CTK.CTkButton(
             volume_inner,
             text="+",
-            font=("Arial", 10, "bold"),
+            font=("Arial", 11, "bold"),
             command=self._increase_volume,
-            width=25,
-            height=22,
-            fg_color="#FF9800",
-            hover_color="#F57C00",
-            text_color="#000000"
+            width=32,
+            height=24,
+            fg_color="#4CAF50",
+            hover_color="#388E3C"
         )
-        btn_increase.pack(side="left", padx=(3, 5))
+        btn_increase.pack(side="left", padx=(3, 8))
         
         # Mute toggle
         self.mute_toggle_btn = CTK.CTkButton(
             volume_inner,
             text="🔇",
-            font=("Arial", 9),
+            font=("Arial", 10),
             command=self._toggle_mute,
-            width=30,
-            height=22,
-            fg_color="#4CAF50",
-            hover_color="#388E3C"
+            width=32,
+            height=24,
+            fg_color="#757575",
+            hover_color="#616161"
         )
-        self.mute_toggle_btn.pack(side="left", padx=(5, 0))
+        self.mute_toggle_btn.pack(side="left", padx=(0, 0))
         
         # Hidden slider for compatibility (không hiển thị)
         self.volume_slider = CTK.CTkSlider(

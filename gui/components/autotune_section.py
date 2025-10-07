@@ -58,21 +58,21 @@ class AutoTuneSection(BaseComponent):
     
     def _create_header(self):
         """Tạo header với title và bypass toggle."""
-        header_frame = CTK.CTkFrame(self.container, fg_color="transparent")
-        header_frame.pack(fill="x", padx=5, pady=(5, 3))
+        header_frame = CTK.CTkFrame(self.container, fg_color="#1E1E1E", corner_radius=4)
+        header_frame.pack(fill="x", padx=4, pady=4)
         
         # Title
         title_label = CTK.CTkLabel(
             header_frame,
             text="Auto-Tune",
             font=("Arial", 11, "bold"),
-            text_color="#FF6B6B"
+            text_color="#FFFFFF"
         )
-        title_label.pack(side="left")
+        title_label.pack(side="left", padx=8, pady=4)
         
         # Auto-Tune Toggle (right side)
         toggle_container = CTK.CTkFrame(header_frame, fg_color="transparent")
-        toggle_container.pack(side="right")
+        toggle_container.pack(side="right", padx=8)
         
         self.plugin_bypass_toggle = CTK.CTkSwitch(
             toggle_container,
@@ -80,16 +80,16 @@ class AutoTuneSection(BaseComponent):
             command=lambda: self.main_window.bypass_manager.toggle_bypass('plugin'),
             width=35,
             height=18,
-            fg_color="#FF4444",
-            progress_color="#44FF44"
+            fg_color="#666666",
+            progress_color="#4CAF50"
         )
-        self.plugin_bypass_toggle.pack(side="left", padx=(0, 3))
+        self.plugin_bypass_toggle.pack(side="left", padx=(0, 5))
         
         self.plugin_state_label = CTK.CTkLabel(
             toggle_container,
             text="ON",
-            font=("Arial", 8, "bold"),
-            text_color="#44FF44",
+            font=("Arial", 9, "bold"),
+            text_color="#4CAF50",
             width=25
         )
         self.plugin_state_label.pack(side="left")
@@ -97,18 +97,28 @@ class AutoTuneSection(BaseComponent):
     def _create_tone_detection(self, parent):
         """Tạo tone detection controls."""
         tone_row = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
-        tone_row.pack(fill="x", pady=(0, 2))
+        tone_row.pack(fill="x", pady=2, padx=4)
         
         tone_info = CTK.CTkFrame(tone_row, fg_color="transparent")
-        tone_info.pack(fill="x", padx=4, pady=4)
+        tone_info.pack(fill="x", padx=6, pady=6)
         
-        # Current Tone
+        # Tone hiện tại label
+        tone_label = CTK.CTkLabel(
+            tone_info,
+            text="Tone hiện tại:",
+            font=("Arial", 10),
+            text_color="#AAAAAA",
+            width=85
+        )
+        tone_label.pack(side="left")
+        
+        # Current Tone value
         self.current_tone_label = CTK.CTkLabel(
             tone_info,
             text="--",
-            font=("Arial", 11, "bold"),
-            text_color="#2CC985",
-            width=30
+            font=("Arial", 12, "bold"),
+            text_color="#4CAF50",
+            width=35
         )
         self.current_tone_label.pack(side="left")
         
@@ -116,23 +126,25 @@ class AutoTuneSection(BaseComponent):
         btn_tone = CTK.CTkButton(
             tone_info,
             text="DÒ",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 10, "bold"),
             command=self._execute_tone_detector,
-            width=35,
-            height=22,
-            fg_color="#2CC985",
-            hover_color="#25B074"
+            width=40,
+            height=24,
+            fg_color="#4CAF50",
+            hover_color="#388E3C"
         )
-        btn_tone.pack(side="left", padx=(5, 0))
+        btn_tone.pack(side="left", padx=(8, 0))
         
         # Auto toggle
         self.auto_detect_switch = CTK.CTkSwitch(
             tone_info,
-            text="Auto",
+            text="Tự động dò",
             command=self._toggle_auto_detect,
-            width=35,
-            height=16,
-            font=("Arial", 8)
+            width=40,
+            height=18,
+            font=("Arial", 10),
+            fg_color="#666666",
+            progress_color="#4CAF50"
         )
         
         saved_auto_detect = self.settings_manager.get_auto_detect()
@@ -148,13 +160,13 @@ class AutoTuneSection(BaseComponent):
     def _create_transpose_controls(self, parent):
         """Tạo transpose controls."""
         transpose_frame = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
-        transpose_frame.pack(fill="x", pady=(0, 3))
+        transpose_frame.pack(fill="x", pady=2, padx=4)
         
         transpose_inner = CTK.CTkFrame(transpose_frame, fg_color="transparent")
-        transpose_inner.pack(pady=4, padx=4, fill="x")
+        transpose_inner.pack(pady=6, padx=6, fill="x")
         
         # Label
-        label = CTK.CTkLabel(transpose_inner, text="Chuyển Giọng", font=("Arial", 9))
+        label = CTK.CTkLabel(transpose_inner, text="Chuyển Giọng", font=("Arial", 10), text_color="#AAAAAA")
         label.pack(side="left")
         
         # Buttons right side
@@ -164,47 +176,47 @@ class AutoTuneSection(BaseComponent):
         self.btn_pitch_old = CTK.CTkButton(
             btn_frame,
             text="GIÀ",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 10, "bold"),
             command=self._apply_pitch_old,
-            width=40,
-            height=22,
-            fg_color="#FF5722",
-            hover_color="#E64A19"
+            width=45,
+            height=24,
+            fg_color="#757575",
+            hover_color="#616161"
         )
-        self.btn_pitch_old.pack(side="left", padx=(0, 2))
+        self.btn_pitch_old.pack(side="left", padx=(0, 3))
         
         self.btn_pitch_normal = CTK.CTkButton(
             btn_frame,
             text="0",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 10, "bold"),
             command=self._apply_pitch_normal,
-            width=30,
-            height=22,
-            fg_color="#9E9E9E",
-            hover_color="#757575"
+            width=35,
+            height=24,
+            fg_color="#757575",
+            hover_color="#616161"
         )
-        self.btn_pitch_normal.pack(side="left", padx=(0, 2))
+        self.btn_pitch_normal.pack(side="left", padx=(0, 3))
         
         self.btn_pitch_young = CTK.CTkButton(
             btn_frame,
             text="TRẺ",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 10, "bold"),
             command=self._apply_pitch_young,
-            width=40,
-            height=22,
-            fg_color="#4CAF50",
-            hover_color="#45A049"
+            width=45,
+            height=24,
+            fg_color="#757575",
+            hover_color="#616161"
         )
-        self.btn_pitch_young.pack(side="left", padx=(0, 3))
+        self.btn_pitch_young.pack(side="left", padx=(0, 8))
         
         self.transpose_value_label = CTK.CTkLabel(
             btn_frame,
             text="0",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 10, "bold"),
             text_color="#FFFFFF",
-            width=25
+            width=30
         )
-        self.transpose_value_label.pack(side="left", padx=(3, 0))
+        self.transpose_value_label.pack(side="left", padx=(0, 0))
         
         # Keep hidden slider for compatibility with batch reset code
         self.pitch_slider = CTK.CTkSlider(
@@ -220,11 +232,11 @@ class AutoTuneSection(BaseComponent):
     
     def _create_music_presets(self, parent):
         """Tạo music presets controls."""
-        presets_frame = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4, border_width=1, border_color="#404040")
-        presets_frame.pack(fill="x", pady=(0, 3), padx=0)
+        presets_frame = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
+        presets_frame.pack(fill="x", pady=2, padx=4)
         
         content_frame = CTK.CTkFrame(presets_frame, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        content_frame.pack(fill="both", expand=True, padx=6, pady=6)
         
         # Configure grid layout - 2 columns
         content_frame.grid_columnconfigure(0, weight=1)
@@ -242,133 +254,133 @@ class AutoTuneSection(BaseComponent):
     
     def _create_bolero_preset(self, parent):
         """Tạo Bolero preset controls."""
-        bolero_container = CTK.CTkFrame(parent, fg_color="#1A1A1A", corner_radius=4, border_width=1, border_color="#FF6B6B")
-        bolero_container.grid(row=0, column=0, sticky="nsew", padx=(0, 2), pady=2)
+        bolero_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4)
+        bolero_container.grid(row=0, column=0, sticky="nsew", padx=(0, 3), pady=0)
         
         bolero_inner = CTK.CTkFrame(bolero_container, fg_color="transparent")
-        bolero_inner.pack(pady=4, padx=4)
+        bolero_inner.pack(pady=5, padx=6)
         
         # Title
         bolero_title = CTK.CTkLabel(
             bolero_inner,
             text="Bolero",
-            font=("Arial", 9, "bold"),
-            text_color="#FF6B6B"
+            font=("Arial", 10),
+            text_color="#AAAAAA"
         )
-        bolero_title.pack(side="left", padx=(0, 3))
+        bolero_title.pack(side="left", padx=(0, 5))
         
         # Minus button
         self.bolero_minus_btn = CTK.CTkButton(
             bolero_inner,
             text="-",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 12, "bold"),
             command=lambda: self._adjust_music_preset('bolero', -1),
-            width=25,
-            height=20,
-            fg_color="#FF5722",
-            hover_color="#E64A19"
+            width=28,
+            height=24,
+            fg_color="#EF6C00",
+            hover_color="#E65100"
         )
-        self.bolero_minus_btn.pack(side="left", padx=(0, 2))
+        self.bolero_minus_btn.pack(side="left", padx=(0, 3))
         
         # Level display
         self.bolero_level_label = CTK.CTkLabel(
             bolero_inner,
             text="0",
-            font=("Arial", 9),
+            font=("Arial", 10, "bold"),
             text_color="#FFFFFF",
-            width=20
+            width=25
         )
-        self.bolero_level_label.pack(side="left", padx=(0, 2))
+        self.bolero_level_label.pack(side="left", padx=(0, 3))
         
         # Plus button
         self.bolero_plus_btn = CTK.CTkButton(
             bolero_inner,
             text="+",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 12, "bold"),
             command=lambda: self._adjust_music_preset('bolero', 1),
-            width=25,
-            height=20,
+            width=28,
+            height=24,
             fg_color="#4CAF50",
-            hover_color="#45A049"
+            hover_color="#388E3C"
         )
-        self.bolero_plus_btn.pack(side="left", padx=(0, 2))
+        self.bolero_plus_btn.pack(side="left", padx=(0, 5))
         
         # Apply button
         self.bolero_apply_btn = CTK.CTkButton(
             bolero_inner,
             text="OK",
-            font=("Arial", 8, "bold"),
+            font=("Arial", 9, "bold"),
             command=lambda: self._apply_music_preset('bolero'),
-            width=30,
-            height=20,
-            fg_color="#FF6B6B",
-            hover_color="#FF5252"
+            width=32,
+            height=24,
+            fg_color="#757575",
+            hover_color="#616161"
         )
         self.bolero_apply_btn.pack(side="left")
     
     def _create_nhac_tre_preset(self, parent):
         """Tạo Nhạc Trẻ preset controls."""
-        nhac_tre_container = CTK.CTkFrame(parent, fg_color="#1A1A1A", corner_radius=4, border_width=1, border_color="#32CD32")
-        nhac_tre_container.grid(row=0, column=1, sticky="nsew", padx=(2, 0), pady=2)
+        nhac_tre_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4)
+        nhac_tre_container.grid(row=0, column=1, sticky="nsew", padx=(3, 0), pady=0)
         
         nhac_tre_inner = CTK.CTkFrame(nhac_tre_container, fg_color="transparent")
-        nhac_tre_inner.pack(pady=4, padx=4)
+        nhac_tre_inner.pack(pady=5, padx=6)
         
         # Title
         nhac_tre_title = CTK.CTkLabel(
             nhac_tre_inner,
             text="Nhạc Trẻ",
-            font=("Arial", 9, "bold"),
-            text_color="#32CD32"
+            font=("Arial", 10),
+            text_color="#AAAAAA"
         )
-        nhac_tre_title.pack(side="left", padx=(0, 3))
+        nhac_tre_title.pack(side="left", padx=(0, 5))
         
         # Minus button
         self.nhac_tre_minus_btn = CTK.CTkButton(
             nhac_tre_inner,
             text="-",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 12, "bold"),
             command=lambda: self._adjust_music_preset('nhac_tre', -1),
-            width=25,
-            height=20,
-            fg_color="#FF5722",
-            hover_color="#E64A19"
+            width=28,
+            height=24,
+            fg_color="#EF6C00",
+            hover_color="#E65100"
         )
-        self.nhac_tre_minus_btn.pack(side="left", padx=(0, 2))
+        self.nhac_tre_minus_btn.pack(side="left", padx=(0, 3))
         
         # Level display
         self.nhac_tre_level_label = CTK.CTkLabel(
             nhac_tre_inner,
             text="0",
-            font=("Arial", 9),
+            font=("Arial", 10, "bold"),
             text_color="#FFFFFF",
-            width=20
+            width=25
         )
-        self.nhac_tre_level_label.pack(side="left", padx=(0, 2))
+        self.nhac_tre_level_label.pack(side="left", padx=(0, 3))
         
         # Plus button
         self.nhac_tre_plus_btn = CTK.CTkButton(
             nhac_tre_inner,
             text="+",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 12, "bold"),
             command=lambda: self._adjust_music_preset('nhac_tre', 1),
-            width=25,
-            height=20,
+            width=28,
+            height=24,
             fg_color="#4CAF50",
-            hover_color="#45A049"
+            hover_color="#388E3C"
         )
-        self.nhac_tre_plus_btn.pack(side="left", padx=(0, 2))
+        self.nhac_tre_plus_btn.pack(side="left", padx=(0, 5))
         
         # Apply button
         self.nhac_tre_apply_btn = CTK.CTkButton(
             nhac_tre_inner,
             text="OK",
-            font=("Arial", 8, "bold"),
+            font=("Arial", 9, "bold"),
             command=lambda: self._apply_music_preset('nhac_tre'),
-            width=30,
-            height=20,
-            fg_color="#32CD32",
-            hover_color="#228B22"
+            width=32,
+            height=24,
+            fg_color="#757575",
+            hover_color="#616161"
         )
         self.nhac_tre_apply_btn.pack(side="left")
     

@@ -48,8 +48,8 @@ class MusicSection(BaseComponent):
         # Title
         title_label = CTK.CTkLabel(
             header_frame,
-            text="Tone Nhạc",
-            font=("Arial", 11, "bold"),
+            text="Nhạc",
+            font=("Arial", 14, "bold"),
             text_color="#FFFFFF"
         )
         title_label.pack(side="left", padx=8, pady=4)
@@ -71,138 +71,146 @@ class MusicSection(BaseComponent):
         
         self.soundshifter_bypass_status_label = CTK.CTkLabel(
             toggle_container,
-            text="ON",
-            font=("Arial", 9, "bold"),
+            text="SoundShifter",
+            font=("Arial", 11, "bold"),
             text_color="#4CAF50",
-            width=25
+            width=50
         )
         self.soundshifter_bypass_status_label.pack(side="left")
     
     def _create_tone_controls(self, parent):
-        """Tạo tone nhạc controls."""
-        tone_nhac_container = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
+        """Tạo tone nhạc controls với màu xanh dương."""
+        tone_nhac_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#2196F3")
         tone_nhac_container.pack(fill="x", pady=2, padx=4)
         
-        tone_nhac_inner = CTK.CTkFrame(tone_nhac_container, fg_color="transparent")
-        tone_nhac_inner.pack(pady=6, padx=6, fill="x")
+        # Label ở trên
+        label = CTK.CTkLabel(
+            tone_nhac_container, 
+            text="Tone Nhạc", 
+            font=("Arial", 11, "bold"), 
+            text_color="#64B5F6"
+        )
+        label.pack(pady=(4, 1))
         
-        # Label
-        label = CTK.CTkLabel(tone_nhac_inner, text="Tone Nhạc", font=("Arial", 10), text_color="#AAAAAA")
-        label.pack(side="left")
-        
-        # Buttons right side
-        btn_frame = CTK.CTkFrame(tone_nhac_inner, fg_color="transparent")
-        btn_frame.pack(side="right")
+        # Buttons ở dưới
+        btn_frame = CTK.CTkFrame(tone_nhac_container, fg_color="transparent")
+        btn_frame.pack(pady=(1, 4))
         
         btn_lower = CTK.CTkButton(
             btn_frame,
             text="-",
             font=("Arial", 12, "bold"),
             command=self._lower_tone,
-            width=32,
-            height=24,
-            fg_color="#EF6C00",
-            hover_color="#E65100"
+            width=35,
+            height=26,
+            fg_color="#1976D2",
+            hover_color="#1565C0"
         )
-        btn_lower.pack(side="left", padx=(0, 3))
+        btn_lower.pack(side="left", padx=2)
         
         btn_reset = CTK.CTkButton(
             btn_frame,
             text="0",
-            font=("Arial", 10, "bold"),
+            font=("Arial", 12, "bold"),
             command=self._reset_soundshifter,
-            width=32,
-            height=24,
-            fg_color="#757575",
-            hover_color="#616161"
+            width=35,
+            height=26,
+            fg_color="#1976D2",
+            hover_color="#1565C0"
         )
-        btn_reset.pack(side="left", padx=(0, 3))
+        btn_reset.pack(side="left", padx=2)
         
         btn_raise = CTK.CTkButton(
             btn_frame,
             text="+",
             font=("Arial", 12, "bold"),
             command=self._raise_tone,
-            width=32,
-            height=24,
-            fg_color="#4CAF50",
-            hover_color="#388E3C"
+            width=35,
+            height=26,
+            fg_color="#1976D2",
+            hover_color="#1565C0"
         )
-        btn_raise.pack(side="left", padx=(0, 8))
+        btn_raise.pack(side="left", padx=2)
         
         self.soundshifter_value_label = CTK.CTkLabel(
             btn_frame,
-            text="0",
-            font=("Arial", 10, "bold"),
-            text_color="#FFFFFF",
-            width=30
+            text="0 Tone",
+            font=("Arial", 11, "bold"),
+            text_color="#64B5F6",
+            width=60
         )
-        self.soundshifter_value_label.pack(side="left", padx=(0, 0))
+        self.soundshifter_value_label.pack(side="left", padx=(8, 0))
     
     def _create_volume_controls(self, parent):
-        """Tạo volume controls."""
-        volume_container = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
+        """Tạo volume controls với màu tím."""
+        volume_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#9C27B0")
         volume_container.pack(fill="x", pady=2, padx=4)
         
-        volume_inner = CTK.CTkFrame(volume_container, fg_color="transparent")
-        volume_inner.pack(pady=6, padx=6, fill="x")
+        # Label ở trên
+        vol_label = CTK.CTkLabel(
+            volume_container, 
+            text="Âm lượng nhạc", 
+            font=("Arial", 11, "bold"), 
+            text_color="#BA68C8"
+        )
+        vol_label.pack(pady=(4, 1))
         
-        # Volume label
-        vol_label = CTK.CTkLabel(volume_inner, text="Volume", font=("Arial", 10), text_color="#AAAAAA")
-        vol_label.pack(side="left", padx=(0, 8))
+        # Buttons ở dưới
+        btn_frame = CTK.CTkFrame(volume_container, fg_color="transparent")
+        btn_frame.pack(pady=(1, 4))
         
         # Decrease button
         btn_decrease = CTK.CTkButton(
-            volume_inner,
+            btn_frame,
             text="-",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 13, "bold"),
             command=self._decrease_volume,
-            width=32,
-            height=24,
-            fg_color="#EF6C00",
-            hover_color="#E65100"
+            width=35,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
         )
-        btn_decrease.pack(side="left", padx=(0, 3))
+        btn_decrease.pack(side="left", padx=2)
         
         # Value display (phần trăm)
         self.volume_value_label = CTK.CTkLabel(
-            volume_inner,
+            btn_frame,
             text="0%",
-            font=("Arial", 10, "bold"),
-            text_color="#FFFFFF",
-            width=45
+            font=("Arial", 11, "bold"),
+            text_color="#BA68C8",
+            width=50
         )
-        self.volume_value_label.pack(side="left", padx=0)
+        self.volume_value_label.pack(side="left", padx=2)
         
         # Increase button
         btn_increase = CTK.CTkButton(
-            volume_inner,
+            btn_frame,
             text="+",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 13, "bold"),
             command=self._increase_volume,
-            width=32,
-            height=24,
-            fg_color="#4CAF50",
-            hover_color="#388E3C"
+            width=35,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
         )
-        btn_increase.pack(side="left", padx=(3, 8))
+        btn_increase.pack(side="left", padx=2)
         
         # Mute toggle
         self.mute_toggle_btn = CTK.CTkButton(
-            volume_inner,
+            btn_frame,
             text="🔇",
-            font=("Arial", 10),
+            font=("Arial", 12),
             command=self._toggle_mute,
-            width=32,
-            height=24,
-            fg_color="#757575",
-            hover_color="#616161"
+            width=35,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
         )
-        self.mute_toggle_btn.pack(side="left", padx=(0, 0))
+        self.mute_toggle_btn.pack(side="left", padx=2)
         
         # Hidden slider for compatibility (không hiển thị)
         self.volume_slider = CTK.CTkSlider(
-            volume_inner,
+            volume_container,
             from_=0,
             to=100,
             number_of_steps=100,
@@ -241,7 +249,18 @@ class MusicSection(BaseComponent):
         self.main_window._toggle_system_mute()
     
     def update_soundshifter_display(self, value):
-        """Cập nhật hiển thị soundshifter value."""
+        """Cập nhật hiển thị soundshifter value theo tone (±2 value = ±1 tone)."""
         if self.soundshifter_value_label:
-            self.soundshifter_value_label.configure(text=str(value))
+            # Chuyển đổi value sang tone: mỗi 2 value = 1 tone
+            tone = value / 2.0
+            
+            # Format hiển thị
+            if tone == 0:
+                display = "0 Tone"
+            elif tone > 0:
+                display = f"+{tone:.1f} Tone" if tone % 1 != 0 else f"+{int(tone)} Tone"
+            else:
+                display = f"{tone:.1f} Tone" if tone % 1 != 0 else f"{int(tone)} Tone"
+            
+            self.soundshifter_value_label.configure(text=display)
 

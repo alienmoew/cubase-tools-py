@@ -100,15 +100,23 @@ class BypassToggleManager:
         toggle_info = self.toggles[toggle_id]
         status_label = toggle_info['status_label']
         
+        # Lấy tên ngắn gọn của plugin
+        plugin_names = {
+            'plugin': 'Auto-Tune',
+            'soundshifter': 'Tone Nhạc',
+            'proq3': 'Lofi'
+        }
+        plugin_name = plugin_names.get(toggle_id, 'Plugin')
+        
         if is_on:  # Plugin ON (active)
             status_label.configure(
-                text="Plugin: ON",
-                text_color="#44FF44"  # Green
+                text=plugin_name,
+                text_color="#4CAF50"  # Green
             )
             toggle_info['state'] = False  # ON means not bypassed
         else:  # Plugin OFF (bypassed)
             status_label.configure(
-                text="Plugin: OFF",
+                text=plugin_name,
                 text_color="#FF4444"  # Red
             )
             toggle_info['state'] = True  # OFF means bypassed

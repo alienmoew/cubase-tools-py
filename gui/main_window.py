@@ -51,7 +51,7 @@ class MainWindow:
         # Create root window
         self.root = CTK.CTk()
         self.root.title(f"{config.APP_NAME} {config.APP_VERSION}")
-        self.root.geometry("1000x250")  # Increased size for better fit
+        self.root.geometry("1000x350")  # Increased height for larger fonts
         self.root.resizable(False, False)
         
         # Window state
@@ -539,7 +539,7 @@ class MainWindow:
             
             # Cập nhật slider và label
             self.vocal_section.volume_mic_slider.set(new_value)
-            self.vocal_section.volume_mic_value_label.configure(text=f"COMP: {new_value}")
+            self.vocal_section.volume_mic_value_label.configure(text=f"Âm lượng mic: {new_value}")
             
             print(f"🎚️ Adjusting Volume Mic to: {new_value} (step: {step})")
             
@@ -574,7 +574,7 @@ class MainWindow:
             
             # Cập nhật slider và label
             self.vocal_section.reverb_mic_slider.set(new_value)
-            self.vocal_section.reverb_mic_value_label.configure(text=f"Reverb: {new_value}")
+            self.vocal_section.reverb_mic_value_label.configure(text=f"Độ vang: {new_value}")
             
             print(f"🎚️ Adjusting Reverb Mic to: {new_value} (step: {step})")
             

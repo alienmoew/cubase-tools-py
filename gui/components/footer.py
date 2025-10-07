@@ -30,7 +30,7 @@ class Footer(BaseComponent):
         version_label = CTK.CTkLabel(
             footer_frame,
             text=f"{config.APP_VERSION}",
-            font=("Arial", 8),
+            font=("Arial", 10),
             text_color="gray"
         )
         version_label.pack(side="left")
@@ -42,7 +42,7 @@ class Footer(BaseComponent):
             command=self._toggle_theme,
             width=25,
             height=18,
-            font=("Arial", 8),
+            font=("Arial", 10),
             corner_radius=3
         )
         self.theme_button.pack(side="left", padx=(5, 0))
@@ -54,7 +54,7 @@ class Footer(BaseComponent):
             command=self._show_debug_window,
             width=25,
             height=18,
-            font=("Arial", 8),
+            font=("Arial", 10),
             corner_radius=3,
             fg_color="#FF9800",
             hover_color="#F57C00"
@@ -65,7 +65,7 @@ class Footer(BaseComponent):
         self.copyright_label = CTK.CTkLabel(
             footer_frame,
             text=config.COPYRIGHT,
-            font=("Arial", 10, "bold"),
+            font=("Arial", 12, "bold"),
             text_color="#FF6B6B",
             cursor="hand2"
         )

@@ -91,6 +91,9 @@ class BypassToggleManager:
         finally:
             # Resume auto-detect
             self.gui.resume_auto_detect_after_manual_action()
+            # Minimize plugins after action
+            if hasattr(self.gui, '_minimize_plugins_after_action'):
+                self.gui._minimize_plugins_after_action()
     
     def update_bypass_ui(self, toggle_id, is_on):
         """Generic UI update cho bypass toggle."""

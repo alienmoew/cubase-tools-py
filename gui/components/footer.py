@@ -35,18 +35,6 @@ class Footer(BaseComponent):
         )
         version_label.pack(side="left")
         
-        # Theme switcher
-        self.theme_button = CTK.CTkButton(
-            footer_frame,
-            text="T",
-            command=self._toggle_theme,
-            width=25,
-            height=18,
-            font=("Arial", 10),
-            corner_radius=3
-        )
-        self.theme_button.pack(side="left", padx=(5, 0))
-        
         # Debug button
         self.debug_button = CTK.CTkButton(
             footer_frame,

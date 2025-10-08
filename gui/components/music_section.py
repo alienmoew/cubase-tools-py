@@ -20,6 +20,9 @@ class MusicSection(BaseComponent):
         self.volume_apply_btn = None
         self.mute_toggle_btn = None
         
+        # Lưu trạng thái tắt tiếng locally để đồng bộ hóa tốt hơn
+        self.is_muted = False
+        
     def create(self):
         """Tạo Music section với tất cả controls."""
         # Section frame - minimal
@@ -38,6 +41,16 @@ class MusicSection(BaseComponent):
         # Volume controls
         self._create_volume_controls(content_frame)
         
+        # Thiết lập trạng thái ban đầu cho nút tắt tiếng
+        # Cố gắng lấy trạng thái từ main_window, nếu không có thì mặc định là False
+        try:
+            self.is_muted = self.main_window.is_system_muted()
+        except AttributeError:
+            self.is_muted = False
+        
+        # Cập nhật giao diện nút tắt tiếng dựa trên trạng thái ban đầu
+        self.update_mute_display(self.is_muted)
+            
         return self.container
     
     def _create_header(self):
@@ -98,46 +111,35 @@ class MusicSection(BaseComponent):
         
         btn_lower = CTK.CTkButton(
             btn_frame,
-            text="-",
-            font=("Arial", 12, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=self._lower_tone,
-            width=35,
+            width=50,
             height=26,
             fg_color="#1976D2",
             hover_color="#1565C0"
         )
         btn_lower.pack(side="left", padx=2)
         
-        btn_reset = CTK.CTkButton(
-            btn_frame,
-            text="0",
-            font=("Arial", 12, "bold"),
-            command=self._reset_soundshifter,
-            width=35,
-            height=26,
-            fg_color="#1976D2",
-            hover_color="#1565C0"
-        )
-        btn_reset.pack(side="left", padx=2)
-        
         btn_raise = CTK.CTkButton(
             btn_frame,
-            text="+",
-            font=("Arial", 12, "bold"),
+            text="Tăng",
+            font=("Arial", 10, "bold"),
             command=self._raise_tone,
-            width=35,
+            width=50,
             height=26,
             fg_color="#1976D2",
             hover_color="#1565C0"
         )
         btn_raise.pack(side="left", padx=2)
         
+        # Soundshifter value display (hiển thị giá trị tone)
         self.soundshifter_value_label = CTK.CTkLabel(
             btn_frame,
             text="0 Tone",
             font=("Arial", 11, "bold"),
             text_color="#64B5F6",
-            width=60
+            width=70
         )
         self.soundshifter_value_label.pack(side="left", padx=(8, 0))
     
@@ -162,17 +164,43 @@ class MusicSection(BaseComponent):
         # Decrease button
         btn_decrease = CTK.CTkButton(
             btn_frame,
-            text="-",
-            font=("Arial", 13, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=self._decrease_volume,
-            width=35,
+            width=50,
             height=26,
             fg_color="#7B1FA2",
             hover_color="#6A1B9A"
         )
         btn_decrease.pack(side="left", padx=2)
         
-        # Value display (phần trăm)
+        # Mute toggle (ĐÃ CHỈNH SỬA KÍCH THƯỚC VÀ FONT)
+        self.mute_toggle_btn = CTK.CTkButton(
+            btn_frame,
+            text="Tắt",  # Văn bản này sẽ được cập nhật bởi update_mute_display
+            font=("Arial", 10, "bold"), # Đổi font size về 10 để giống các nút khác
+            command=self._toggle_mute,
+            width=55,  # Tăng width để chữ không bị cắt
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
+        )
+        self.mute_toggle_btn.pack(side="left", padx=2)
+        
+        # Increase button
+        btn_increase = CTK.CTkButton(
+            btn_frame,
+            text="Tăng",
+            font=("Arial", 10, "bold"),
+            command=self._increase_volume,
+            width=50,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
+        )
+        btn_increase.pack(side="left", padx=2)
+        
+        # Value display (hiển thị phần trăm)
         self.volume_value_label = CTK.CTkLabel(
             btn_frame,
             text="0%",
@@ -180,33 +208,7 @@ class MusicSection(BaseComponent):
             text_color="#BA68C8",
             width=50
         )
-        self.volume_value_label.pack(side="left", padx=2)
-        
-        # Increase button
-        btn_increase = CTK.CTkButton(
-            btn_frame,
-            text="+",
-            font=("Arial", 13, "bold"),
-            command=self._increase_volume,
-            width=35,
-            height=26,
-            fg_color="#7B1FA2",
-            hover_color="#6A1B9A"
-        )
-        btn_increase.pack(side="left", padx=2)
-        
-        # Mute toggle
-        self.mute_toggle_btn = CTK.CTkButton(
-            btn_frame,
-            text="🔇",
-            font=("Arial", 12),
-            command=self._toggle_mute,
-            width=35,
-            height=26,
-            fg_color="#7B1FA2",
-            hover_color="#6A1B9A"
-        )
-        self.mute_toggle_btn.pack(side="left", padx=2)
+        self.volume_value_label.pack(side="left", padx=(8, 0))
         
         # Hidden slider for compatibility (không hiển thị)
         self.volume_slider = CTK.CTkSlider(
@@ -245,8 +247,24 @@ class MusicSection(BaseComponent):
         self.main_window._decrease_system_volume()
     
     def _toggle_mute(self):
-        """Toggle mute."""
+        """Toggle mute với logic đã được sửa lỗi."""
+        # 1. Đảo ngược trạng thái local
+        self.is_muted = not self.is_muted
+        
+        # 2. Cập nhật giao diện ngay lập tức để phản hồi tức thì
+        self.update_mute_display(self.is_muted)
+        
+        # 3. Gọi hàm của main_window để thực hiện hành động
         self.main_window._toggle_system_mute()
+
+    def update_mute_display(self, is_muted):
+        """
+        Cập nhật hiển thị của nút mute.
+        Logic: Nếu đang tắt tiếng (is_muted=True), nút hiển thị "Bật" để bật lại.
+        Nếu đang có tiếng (is_muted=False), nút hiển thị "Tắt" để tắt đi.
+        """
+        if self.mute_toggle_btn:
+            self.mute_toggle_btn.configure(text="Bật" if is_muted else "Tắt")
     
     def update_soundshifter_display(self, value):
         """Cập nhật hiển thị soundshifter value theo tone (±2 value = ±1 tone)."""
@@ -263,4 +281,8 @@ class MusicSection(BaseComponent):
                 display = f"{tone:.1f} Tone" if tone % 1 != 0 else f"{int(tone)} Tone"
             
             self.soundshifter_value_label.configure(text=display)
-
+    
+    def update_volume_display(self, value):
+        """Cập nhật hiển thị volume value theo phần trăm."""
+        if self.volume_value_label:
+            self.volume_value_label.configure(text=f"{value}%")

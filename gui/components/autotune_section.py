@@ -108,27 +108,47 @@ class AutoTuneSection(BaseComponent):
         top_row = CTK.CTkFrame(tone_row, fg_color="transparent")
         top_row.pack(fill="x", pady=(4, 2), padx=8)
         
+        # Label ở bên trái với dấu hai chấm
         tone_title = CTK.CTkLabel(
             top_row,
-            text="Tone Hiện Tại",
+            text="Tone hiện tại:",  # Thêm dấu hai chấm
             font=("Arial", 11, "bold"),
             text_color="#81C784"
         )
         tone_title.pack(side="left", padx=(0, 4))
         
+        # Giá trị Key ở bên phải label
         self.current_tone_label = CTK.CTkLabel(
             top_row,
-            text="--",
+            text="Key",  # Đổi text mặc định
             font=("Arial", 14, "bold"),
-            text_color="#A5D6A7",
+            text_color="#EF5350",  # Màu đỏ
             width=50
         )
+        # SỬA LỖI: Thêm .pack()
         self.current_tone_label.pack(side="left")
         
-        # Auto toggle ở bên phải
+        # Bottom row: Dò tone button (left) + Tự động dò switch (right)
+        bottom_row = CTK.CTkFrame(tone_row, fg_color="transparent")
+        bottom_row.pack(fill="x", pady=(2, 4), padx=8)
+        
+        # Dò tone button ở bên trái
+        btn_tone = CTK.CTkButton(
+            bottom_row,
+            text="Dò tone",
+            font=("Arial", 11, "bold"),
+            command=self._execute_tone_detector,
+            width=80,
+            height=26,
+            fg_color="#388E3C",
+            hover_color="#2E7D32"
+        )
+        btn_tone.pack(side="left", padx=0)
+        
+        # Tự động dò switch ở bên phải với text
         self.auto_detect_switch = CTK.CTkSwitch(
-            top_row,
-            text="Tự động dò",
+            bottom_row,
+            text="Tự động dò",  # Thêm lại text
             command=self._toggle_auto_detect,
             width=40,
             height=18,
@@ -137,19 +157,6 @@ class AutoTuneSection(BaseComponent):
             progress_color="#4CAF50"
         )
         self.auto_detect_switch.pack(side="right", padx=0)
-        
-        # Bottom row: Dò button
-        btn_tone = CTK.CTkButton(
-            tone_row,
-            text="DÒ",
-            font=("Arial", 11, "bold"),
-            command=self._execute_tone_detector,
-            width=80,
-            height=26,
-            fg_color="#388E3C",
-            hover_color="#2E7D32"
-        )
-        btn_tone.pack(pady=(2, 4), padx=8)
         
         saved_auto_detect = self.settings_manager.get_auto_detect()
         if saved_auto_detect:
@@ -542,4 +549,3 @@ class AutoTuneSection(BaseComponent):
             self._highlight_pitch_button('normal')
         else:  # value > 0
             self._highlight_pitch_button('young')
-

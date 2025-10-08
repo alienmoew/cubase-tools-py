@@ -69,9 +69,10 @@ class XVoxDetector(BaseFeature):
     def _find_xvox_window(self):
         """Tìm cửa sổ XVox plugin."""
         from utils.window_manager import WindowManager
+        import pygetwindow as gw
         
         # Try different possible window titles for XVox
-        possible_titles = ["Xvox", "XVOX", "xvox", "X-Vox", "X_Vox"]
+        possible_titles = ["Xvox", "XVOX", "xvox", "X-Vox", "X_Vox", "XVox", "X Vox"]
         
         for title in possible_titles:
             plugin_win = WindowManager.find_window(title)
@@ -79,7 +80,19 @@ class XVoxDetector(BaseFeature):
                 print(f"✅ Found XVox window: {title}")
                 return plugin_win
         
+        # Debug: Print all available windows
         print("❌ XVox plugin window not found")
+        print("💡 Searching for windows containing 'vox' or 'x-vox'...")
+        all_windows = gw.getAllWindows()
+        vox_windows = [w for w in all_windows if 'vox' in w.title.lower()]
+        
+        if vox_windows:
+            print(f"📋 Found {len(vox_windows)} window(s) with 'vox' in title:")
+            for w in vox_windows:
+                print(f"   • '{w.title}'")
+        else:
+            print("💡 No windows with 'vox' in title found")
+        
         print("💡 Make sure XVox plugin is open and visible")
         return None
     
@@ -334,26 +347,23 @@ class XVoxDetector(BaseFeature):
             time.sleep(0.2)
             print(f"🖱 Clicked on LOW text at {low_pos}")
             
-            # 6. Click ở vị trí chiều dọc 40% từ trên xuống (giữ nguyên x coordinate)
+            # 6. Click ở vị trí chiều dọc 35% từ trên xuống (convert to absolute coordinates)
             template_match = result['template_match']
-            template_top = template_match['location'][1]
+            template_top = template_match['location'][1]  # Relative Y in plugin window
             template_height = template_match['template_size'][1]
             
-            click_y = template_top + (template_height * 0.40)
+            # Convert to absolute screen coordinates
+            click_y = plugin_win.top + template_top + (template_height * 0.35)
             click_x = low_pos[0]
             
             pyautogui.click(click_x, click_y)
             time.sleep(0.2)
-            print(f"🖱 Clicked at 40% position: ({click_x}, {click_y})")
+            print(f"🖱 Clicked at 35% position: ({click_x}, {click_y})")
             
-            # 7. Select text and input value (like original)
+            # 7. Select text and input value
             pyautogui.tripleClick(click_x, click_y)
             time.sleep(0.1)
             print("🖱 Triple-clicked to select text")
-            
-            pyautogui.hotkey('ctrl', 'a')
-            time.sleep(0.1)
-            print("⌨️ Also tried Ctrl+A")
             
             pyautogui.typewrite(str(value))
             time.sleep(0.1)
@@ -413,26 +423,23 @@ class XVoxDetector(BaseFeature):
             time.sleep(0.2)
             print(f"🖱 Clicked on HIGH text at {high_pos}")
             
-            # 6. Click ở vị trí chiều dọc 40% từ trên xuống (giữ nguyên x coordinate)
+            # 6. Click ở vị trí chiều dọc 35% từ trên xuống (convert to absolute coordinates)
             template_match = result['template_match']
-            template_top = template_match['location'][1]
+            template_top = template_match['location'][1]  # Relative Y in plugin window
             template_height = template_match['template_size'][1]
             
-            click_y = template_top + (template_height * 0.40)
+            # Convert to absolute screen coordinates
+            click_y = plugin_win.top + template_top + (template_height * 0.35)
             click_x = high_pos[0]
             
             pyautogui.click(click_x, click_y)
             time.sleep(0.2)
-            print(f"🖱 Clicked at 40% position: ({click_x}, {click_y})")
+            print(f"🖱 Clicked at 35% position: ({click_x}, {click_y})")
             
-            # 7. Select text and input value (like original)
+            # 7. Select text and input value
             pyautogui.tripleClick(click_x, click_y)
             time.sleep(0.1)
             print("🖱 Triple-clicked to select text")
-            
-            pyautogui.hotkey('ctrl', 'a')
-            time.sleep(0.1)
-            print("⌨️ Also tried Ctrl+A")
             
             pyautogui.typewrite(str(value))
             time.sleep(0.1)

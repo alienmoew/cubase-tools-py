@@ -138,33 +138,33 @@ class VocalSection(BaseComponent):
         # Decrease button
         self.bass_decrease_btn = CTK.CTkButton(
             bass_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_bass_instant(-1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#F57C00",
             hover_color="#E65100"
         )
         self.bass_decrease_btn.pack(side="left", padx=2)
         
-        # Bass value display
+        # Bass value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
         self.bass_value_label = CTK.CTkLabel(
             bass_inner,
             text="0",
             font=("Arial", 11, "bold"),
             text_color="#FFB74D",
-            width=40
+            width=0  # Đặt width=0 để ẩn đi
         )
-        self.bass_value_label.pack(side="left", padx=2)
+        # Không pack label này để nó không hiển thị
         
         # Increase button
         self.bass_increase_btn = CTK.CTkButton(
             bass_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
+            text="Tăng",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_bass_instant(1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#F57C00",
             hover_color="#E65100"
@@ -201,33 +201,33 @@ class VocalSection(BaseComponent):
         # Decrease button
         self.treble_decrease_btn = CTK.CTkButton(
             treble_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_treble_instant(-1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#388E3C",
             hover_color="#2E7D32"
         )
         self.treble_decrease_btn.pack(side="left", padx=2)
         
-        # Treble value display
+        # Treble value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
         self.treble_value_label = CTK.CTkLabel(
             treble_inner,
             text="0",
             font=("Arial", 11, "bold"),
             text_color="#81C784",
-            width=40
+            width=0  # Đặt width=0 để ẩn đi
         )
-        self.treble_value_label.pack(side="left", padx=2)
+        # Không pack label này để nó không hiển thị
         
         # Increase button
         self.treble_increase_btn = CTK.CTkButton(
             treble_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
+            text="Tăng",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_treble_instant(1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#388E3C",
             hover_color="#2E7D32"
@@ -264,33 +264,33 @@ class VocalSection(BaseComponent):
         # Decrease button
         self.volume_mic_decrease_btn = CTK.CTkButton(
             volume_mic_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_volume_mic_instant(-1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#D32F2F",
             hover_color="#C62828"
         )
         self.volume_mic_decrease_btn.pack(side="left", padx=2)
         
-        # COMP value display
+        # COMP value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
         self.volume_mic_value_label = CTK.CTkLabel(
             volume_mic_inner,
             text="45",
             font=("Arial", 11, "bold"),
             text_color="#EF9A9A",
-            width=40
+            width=0  # Đặt width=0 để ẩn đi
         )
-        self.volume_mic_value_label.pack(side="left", padx=2)
+        # Không pack label này để nó không hiển thị
         
         # Increase button
         self.volume_mic_increase_btn = CTK.CTkButton(
             volume_mic_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
+            text="Tăng",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_volume_mic_instant(1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#D32F2F",
             hover_color="#C62828"
@@ -327,33 +327,33 @@ class VocalSection(BaseComponent):
         # Decrease button
         self.reverb_mic_decrease_btn = CTK.CTkButton(
             reverb_mic_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_reverb_mic_instant(-1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#0097A7",
             hover_color="#00838F"
         )
         self.reverb_mic_decrease_btn.pack(side="left", padx=2)
         
-        # Reverb value display
+        # Reverb value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
         self.reverb_mic_value_label = CTK.CTkLabel(
             reverb_mic_inner,
             text="36",
             font=("Arial", 11, "bold"),
             text_color="#80DEEA",
-            width=40
+            width=0  # Đặt width=0 để ẩn đi
         )
-        self.reverb_mic_value_label.pack(side="left", padx=2)
+        # Không pack label này để nó không hiển thị
         
         # Increase button
         self.reverb_mic_increase_btn = CTK.CTkButton(
             reverb_mic_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
+            text="Tăng",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_reverb_mic_instant(1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#0097A7",
             hover_color="#00838F"

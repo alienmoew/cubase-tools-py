@@ -580,11 +580,29 @@ class MainWindow:
             self._minimize_plugins_after_action()
 
     def _update_soundshifter_display(self):
-        """Cập nhật hiển thị giá trị Tone nhạc."""
-        if self.music_section and self.music_section.soundshifter_value_label:
-            current_value = self.soundshifter_detector.current_value
-            self.music_section.soundshifter_value_label.configure(
-                text=str(current_value))
+        """Cập nhật hiển thị giá trị Tone nhạc (delegate cho MusicSection để format)."""
+        try:
+            current_value = self.soundshifter_detector.current_value  # units, 2 units = 1 tone
+            if self.music_section:
+                # Let MusicSection format the value (shows 0 / +1 Tone / -0.5 Tone, ...)
+                self.music_section.update_soundshifter_display(current_value)
+            else:
+                # Fallback: format here if music_section missing
+                val = int(round(current_value))
+                if val == 0:
+                    text = "0 Tone"
+                else:
+                    tone = val / 2.0
+                    sign = "+" if tone > 0 else ""
+                    text = f"{sign}{int(tone)} Tone" if val % 2 == 0 else f"{sign}{tone:.1f} Tone"
+                # Try to update label if exists
+                try:
+                    self.music_section.soundshifter_value_label.configure(text=text)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"❌ Error updating soundshifter display: {e}")
+
 
     def _apply_volume(self):
         """Áp dụng thay đổi Volume khi nhấn nút Áp Dụng."""
@@ -1019,13 +1037,13 @@ class MainWindow:
             if self.music_section and self.music_section.mute_toggle_btn:
                 if is_muted:
                     self.music_section.mute_toggle_btn.configure(
-                        text="🔇",
+                        text="Tắt",
                         fg_color="#E91E63",
                         hover_color="#C2185B"
                     )
                 else:
                     self.music_section.mute_toggle_btn.configure(
-                        text="🔊",
+                        text="Bật",
                         fg_color="#4CAF50",
                         hover_color="#388E3C"
                     )

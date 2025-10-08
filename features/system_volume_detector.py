@@ -1,24 +1,10 @@
-"""
-System Volume Detector - Điều chỉnh âm lượng của ứng dụng cụ thể (Chrome, etc.)
-sử dụng Windows Audio Session API (pycaw).
-"""
 from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
 
 
 class SystemVolumeDetector:
-    """
-    Detector để điều chỉnh âm lượng của ứng dụng cụ thể thông qua Windows Audio API.
-    Thay thế cho việc điều chỉnh trong Cubase.
-    """
-    
     def __init__(self, app_name="chrome.exe"):
-        """
-        Initialize SystemVolumeDetector.
-        
-        Args:
-            app_name: Tên process của ứng dụng cần điều khiển (vd: chrome.exe, msedge.exe, spotify.exe)
-        """
         self.app_name = app_name
+        self.previous_volume = None  # Lưu volume trước khi mute
         print(f"🔊 System Volume Detector initialized for: {app_name}")
     
     def get_volume(self):
@@ -125,27 +111,25 @@ class SystemVolumeDetector:
     
     def toggle_mute(self):
         """
-        Toggle mute/unmute.
-        
-        Returns:
-            bool: True nếu thành công, False nếu thất bại
+        Toggle mute/unmute, giữ lại volume cũ khi bật lại.
         """
         try:
             current = self.get_volume()
-            
-            if current > 0.01:  # Currently audible
-                # Mute (set to 0)
+
+            if current > 0.01:  # đang có tiếng → mute
+                self.previous_volume = current  # nhớ lại âm lượng trước khi mute
                 success = self.set_volume(0.0)
                 if success:
-                    print(f"🔇 Muted {self.app_name}")
+                    print(f"🔇 Muted {self.app_name} (saved previous volume: {int(self.previous_volume * 100)}%)")
                 return success
             else:
-                # Unmute (restore to default or 50%)
-                success = self.set_volume(0.5)
+                # đang mute → unmute, khôi phục lại volume cũ nếu có
+                restore_value = self.previous_volume if self.previous_volume is not None else 0.5
+                success = self.set_volume(restore_value)
                 if success:
-                    print(f"🔊 Unmuted {self.app_name}")
+                    print(f"🔊 Unmuted {self.app_name} (restored to {int(restore_value * 100)}%)")
                 return success
-                
+
         except Exception as e:
             print(f"❌ Error toggling mute: {e}")
             return False

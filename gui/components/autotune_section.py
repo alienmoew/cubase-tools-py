@@ -120,7 +120,7 @@ class AutoTuneSection(BaseComponent):
         # Giá trị Key ở bên phải label
         self.current_tone_label = CTK.CTkLabel(
             top_row,
-            text="Key",  # Đổi text mặc định
+            text="--",  # Đổi text mặc định
             font=("Arial", 14, "bold"),
             text_color="#EF5350",  # Màu đỏ
             width=50
@@ -263,6 +263,8 @@ class AutoTuneSection(BaseComponent):
         # Update initial display
         self._update_music_preset_display('bolero')
         self._update_music_preset_display('nhac_tre')
+        # 🧹 Reset highlight ban đầu
+        self._highlight_active_preset(None)
     
     def _create_bolero_preset(self, parent):
         """Tạo Bolero preset controls với màu hồng."""
@@ -281,8 +283,8 @@ class AutoTuneSection(BaseComponent):
             width=100,
             height=26,
             corner_radius=6,
-            fg_color="#C2185B",
-            hover_color="#AD1457",
+            fg_color="#303F9F",
+            hover_color="#283593",
             border_width=0
         )
         self.bolero_apply_circle.pack(pady=(4, 2))
@@ -298,8 +300,8 @@ class AutoTuneSection(BaseComponent):
             command=lambda: self._adjust_and_apply_preset('bolero', -1),
             width=28,
             height=24,
-            fg_color="#C2185B",
-            hover_color="#AD1457"
+            fg_color="#303F9F",
+            hover_color="#283593"
         )
         self.bolero_minus_btn.pack(side="left", padx=(0, 3))
         
@@ -308,7 +310,7 @@ class AutoTuneSection(BaseComponent):
             bolero_inner,
             text="0",
             font=("Arial", 10, "bold"),
-            text_color="#F48FB1",
+            text_color="#9FA8DA",
             width=25
         )
         self.bolero_level_label.pack(side="left", padx=(0, 3))
@@ -321,8 +323,8 @@ class AutoTuneSection(BaseComponent):
             command=lambda: self._adjust_and_apply_preset('bolero', 1),
             width=28,
             height=24,
-            fg_color="#C2185B",
-            hover_color="#AD1457"
+            fg_color="#303F9F",
+            hover_color="#283593"
         )
         self.bolero_plus_btn.pack(side="left", padx=(0, 0))
     
@@ -454,16 +456,16 @@ class AutoTuneSection(BaseComponent):
         self.active_music_preset = active_preset
         
         # Màu cho Bolero (hồng)
-        bolero_default_border = "#E91E63"
-        bolero_active_border = "#FF4081"  # Hồng sáng
-        bolero_default_btn = "#C2185B"
-        bolero_active_btn = "#FF4081"
+        bolero_default_border = "#303F9F"
+        bolero_active_border = "#E91E63"  # Hồng sáng
+        bolero_default_btn = "#303F9F"
+        bolero_active_btn = "#E91E63"
         
         # Màu cho Nhạc Trẻ (xanh tím/indigo)
-        nhac_tre_default_border = "#3F51B5"
-        nhac_tre_active_border = "#5C6BC0"  # Xanh tím sáng
+        nhac_tre_default_border = "#303F9F"
+        nhac_tre_active_border = "#E91E63"  # Xanh tím sáng
         nhac_tre_default_btn = "#303F9F"
-        nhac_tre_active_btn = "#5C6BC0"
+        nhac_tre_active_btn = "#E91E63"
         
         if active_preset == 'bolero':
             if self.bolero_container:

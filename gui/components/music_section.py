@@ -19,6 +19,12 @@ class MusicSection(BaseComponent):
         self.volume_value_label = None
         self.volume_apply_btn = None
         self.mute_toggle_btn = None
+        # Transpose controls
+        self.transpose_value_label = None
+        self.btn_pitch_old = None
+        self.btn_pitch_normal = None
+        self.btn_pitch_young = None
+        self.pitch_slider = None
         
         # Lưu trạng thái tắt tiếng locally để đồng bộ hóa tốt hơn
         self.is_muted = False
@@ -33,13 +39,17 @@ class MusicSection(BaseComponent):
         
         # Content frame - minimal
         content_frame = CTK.CTkFrame(self.container, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=4, pady=(0, 4))
+        # GIẢM PADDING
+        content_frame.pack(fill="both", expand=True, padx=2, pady=(0, 2))
         
-        # Tone nhạc controls
+        # Volume controls (Đưa lên trên cùng)
+        self._create_volume_controls(content_frame)
+        
+        # Tone nhạc controls (Ở giữa)
         self._create_tone_controls(content_frame)
         
-        # Volume controls
-        self._create_volume_controls(content_frame)
+        # Transpose controls (Ở dưới cùng)
+        self._create_transpose_controls(content_frame)  
         
         # Thiết lập trạng thái ban đầu cho nút tắt tiếng
         # Cố gắng lấy trạng thái từ main_window, nếu không có thì mặc định là False
@@ -56,7 +66,8 @@ class MusicSection(BaseComponent):
     def _create_header(self):
         """Tạo header với title và bypass toggle."""
         header_frame = CTK.CTkFrame(self.container, fg_color="#1E1E1E", corner_radius=4)
-        header_frame.pack(fill="x", padx=4, pady=4)
+        # GIẢM PADDING
+        header_frame.pack(fill="x", padx=3, pady=3)
         
         # Title
         title_label = CTK.CTkLabel(
@@ -91,10 +102,92 @@ class MusicSection(BaseComponent):
         )
         self.soundshifter_bypass_status_label.pack(side="left")
     
+    def _create_volume_controls(self, parent):
+        """Tạo volume controls với màu tím."""
+        volume_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#9C27B0")
+        # GIẢM PADDING
+        volume_container.pack(fill="x", pady=1, padx=2)
+        
+        # Label ở trên
+        vol_label = CTK.CTkLabel(
+            volume_container, 
+            text="Âm lượng nhạc", 
+            font=("Arial", 11, "bold"), 
+            text_color="#BA68C8"
+        )
+        # GIẢM PADDING
+        vol_label.pack(pady=(3, 1))
+        
+        # Buttons ở dưới
+        btn_frame = CTK.CTkFrame(volume_container, fg_color="transparent")
+        # GIẢM PADDING
+        btn_frame.pack(pady=(1, 3))
+        
+        # Decrease button
+        btn_decrease = CTK.CTkButton(
+            btn_frame,
+            text="Giảm",
+            font=("Arial", 10, "bold"),
+            command=self._decrease_volume,
+            width=50,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
+        )
+        btn_decrease.pack(side="left", padx=2)
+        
+        # Mute toggle
+        self.mute_toggle_btn = CTK.CTkButton(
+            btn_frame,
+            text="Tắt",
+            font=("Arial", 10, "bold"),
+            command=self._toggle_mute,
+            width=55,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
+        )
+        self.mute_toggle_btn.pack(side="left", padx=2)
+        
+        # Increase button
+        btn_increase = CTK.CTkButton(
+            btn_frame,
+            text="Tăng",
+            font=("Arial", 10, "bold"),
+            command=self._increase_volume,
+            width=50,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
+        )
+        btn_increase.pack(side="left", padx=2)
+        
+        # Value display (hiển thị phần trăm)
+        self.volume_value_label = CTK.CTkLabel(
+            btn_frame,
+            text="0%",
+            font=("Arial", 11, "bold"),
+            text_color="#BA68C8",
+            width=50
+        )
+        self.volume_value_label.pack(side="left", padx=(8, 0))
+        
+        # Hidden slider for compatibility
+        self.volume_slider = CTK.CTkSlider(
+            volume_container,
+            from_=0,
+            to=100,
+            number_of_steps=100,
+            width=0,
+            height=0
+        )
+        self.volume_slider.set(0)
+    
     def _create_tone_controls(self, parent):
         """Tạo tone nhạc controls với màu xanh dương."""
         tone_nhac_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#2196F3")
-        tone_nhac_container.pack(fill="x", pady=2, padx=4)
+        # GIẢM PADDING
+        tone_nhac_container.pack(fill="x", pady=1, padx=2)
         
         # Label ở trên
         label = CTK.CTkLabel(
@@ -103,11 +196,13 @@ class MusicSection(BaseComponent):
             font=("Arial", 11, "bold"), 
             text_color="#64B5F6"
         )
-        label.pack(pady=(4, 1))
+        # GIẢM PADDING
+        label.pack(pady=(3, 1))
         
         # Buttons ở dưới
         btn_frame = CTK.CTkFrame(tone_nhac_container, fg_color="transparent")
-        btn_frame.pack(pady=(1, 4))
+        # GIẢM PADDING
+        btn_frame.pack(pady=(1, 3))
         
         btn_lower = CTK.CTkButton(
             btn_frame,
@@ -155,87 +250,84 @@ class MusicSection(BaseComponent):
             width=70
         )
         self.soundshifter_value_label.pack(side="left", padx=(8, 0))
-    
-    def _create_volume_controls(self, parent):
-        """Tạo volume controls với màu tím."""
-        volume_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#9C27B0")
-        volume_container.pack(fill="x", pady=2, padx=4)
+        
+    def _create_transpose_controls(self, parent):
+        """Tạo transpose controls với màu tím."""
+        transpose_frame = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#9C27B0")
+        # GIẢM PADDING
+        transpose_frame.pack(fill="x", pady=1, padx=2)
         
         # Label ở trên
-        vol_label = CTK.CTkLabel(
-            volume_container, 
-            text="Âm lượng nhạc", 
+        label = CTK.CTkLabel(
+            transpose_frame, 
+            text="Chuyển Giọng", 
             font=("Arial", 11, "bold"), 
             text_color="#BA68C8"
         )
-        vol_label.pack(pady=(4, 1))
+        # GIẢM PADDING
+        label.pack(pady=(3, 1))
         
         # Buttons ở dưới
-        btn_frame = CTK.CTkFrame(volume_container, fg_color="transparent")
-        btn_frame.pack(pady=(1, 4))
+        btn_frame = CTK.CTkFrame(transpose_frame, fg_color="transparent")
+        # GIẢM PADDING
+        btn_frame.pack(pady=(1, 3))
         
-        # Decrease button
-        btn_decrease = CTK.CTkButton(
+        self.btn_pitch_old = CTK.CTkButton(
             btn_frame,
-            text="Giảm",
+            text="Người Già",
             font=("Arial", 10, "bold"),
-            command=self._decrease_volume,
-            width=50,
+            command=self._apply_pitch_old,
+            width=60,
             height=26,
             fg_color="#7B1FA2",
             hover_color="#6A1B9A"
         )
-        btn_decrease.pack(side="left", padx=2)
+        self.btn_pitch_old.pack(side="left", padx=2)
         
-        # Mute toggle (ĐÃ CHỈNH SỬA KÍCH THƯỚC VÀ FONT)
-        self.mute_toggle_btn = CTK.CTkButton(
+        self.btn_pitch_normal = CTK.CTkButton(
             btn_frame,
-            text="Tắt",  # Văn bản này sẽ được cập nhật bởi update_mute_display
-            font=("Arial", 10, "bold"), # Đổi font size về 10 để giống các nút khác
-            command=self._toggle_mute,
-            width=55,  # Tăng width để chữ không bị cắt
-            height=26,
-            fg_color="#7B1FA2",
-            hover_color="#6A1B9A"
-        )
-        self.mute_toggle_btn.pack(side="left", padx=2)
-        
-        # Increase button
-        btn_increase = CTK.CTkButton(
-            btn_frame,
-            text="Tăng",
+            text="Bình Thường",
             font=("Arial", 10, "bold"),
-            command=self._increase_volume,
-            width=50,
+            command=self._apply_pitch_normal,
+            width=75,
             height=26,
             fg_color="#7B1FA2",
             hover_color="#6A1B9A"
         )
-        btn_increase.pack(side="left", padx=2)
+        self.btn_pitch_normal.pack(side="left", padx=2)
         
-        # Value display (hiển thị phần trăm)
-        self.volume_value_label = CTK.CTkLabel(
+        self.btn_pitch_young = CTK.CTkButton(
             btn_frame,
-            text="0%",
-            font=("Arial", 11, "bold"),
-            text_color="#BA68C8",
-            width=50
+            text="Trẻ Em",
+            font=("Arial", 10, "bold"),
+            command=self._apply_pitch_young,
+            width=60,
+            height=26,
+            fg_color="#7B1FA2",
+            hover_color="#6A1B9A"
         )
-        self.volume_value_label.pack(side="left", padx=(8, 0))
+        self.btn_pitch_young.pack(side="left", padx=2)
         
-        # Hidden slider for compatibility (không hiển thị)
-        self.volume_slider = CTK.CTkSlider(
-            volume_container,
-            from_=0,
-            to=100,
-            number_of_steps=100,
-            width=0,  # Ẩn đi
+        # Ẩn label giá trị (không cần hiển thị số nữa)
+        self.transpose_value_label = CTK.CTkLabel(
+            btn_frame,
+            text="0",
+            font=("Arial", 10, "bold"),
+            text_color="#FFFFFF",
+            width=0  # Ẩn đi
+        )
+        
+        # Keep hidden slider for compatibility with batch reset code
+        self.pitch_slider = CTK.CTkSlider(
+            transpose_frame,
+            from_=self.default_values.get('transpose_min', -12),
+            to=self.default_values.get('transpose_max', 12),
+            number_of_steps=abs(self.default_values.get('transpose_min', -12)) + abs(self.default_values.get('transpose_max', 12)),
+            command=self._on_pitch_slider_change,
+            width=0,
             height=0
         )
-        self.volume_slider.set(0)
-        
-        # Remove old apply button reference
-        self.volume_apply_btn = None
+        self.pitch_slider.set(self.default_values.get('transpose_default', 0))
     
     # ==================== EVENT HANDLERS ====================
     
@@ -299,3 +391,57 @@ class MusicSection(BaseComponent):
         """Cập nhật hiển thị volume value theo phần trăm."""
         if self.volume_value_label:
             self.volume_value_label.configure(text=f"{value}%")
+            
+    def _on_pitch_slider_change(self, value):
+        """Callback khi pitch slider thay đổi."""
+        pitch_value = int(value)
+        self.transpose_value_label.configure(text=str(pitch_value))
+
+    def _apply_pitch_old(self):
+        """Áp dụng pitch Già."""
+        self._highlight_pitch_button('old')
+        self.main_window._apply_pitch_old()
+
+    def _apply_pitch_normal(self):
+        """Áp dụng pitch Bình thường."""
+        self._highlight_pitch_button('normal')
+        self.main_window._apply_pitch_normal()
+
+    def _apply_pitch_young(self):
+        """Áp dụng pitch Trẻ."""
+        self._highlight_pitch_button('young')
+        self.main_window._apply_pitch_young()
+
+    def _highlight_pitch_button(self, selected):
+        """Highlight nút pitch đang được chọn với màu tím."""
+        default_color = "#7B1FA2"  # Tím đậm (base)
+        active_color = "#F72585"   # Tím sáng (active)
+        
+        # Reset tất cả về màu base
+        if self.btn_pitch_old:
+            self.btn_pitch_old.configure(fg_color=default_color)
+        if self.btn_pitch_normal:
+            self.btn_pitch_normal.configure(fg_color=default_color)
+        if self.btn_pitch_young:
+            self.btn_pitch_young.configure(fg_color=default_color)
+        
+        # Highlight nút được chọn
+        if selected == 'old' and self.btn_pitch_old:
+            self.btn_pitch_old.configure(fg_color=active_color)
+        elif selected == 'normal' and self.btn_pitch_normal:
+            self.btn_pitch_normal.configure(fg_color=active_color)
+        elif selected == 'young' and self.btn_pitch_young:
+            self.btn_pitch_young.configure(fg_color=active_color)
+
+    def update_transpose_value(self, value):
+        """Cập nhật hiển thị transpose value và highlight button tương ứng."""
+        if self.transpose_value_label:
+            self.transpose_value_label.configure(text=str(value))
+        
+        # Highlight button tương ứng với giá trị
+        if value < 0:
+            self._highlight_pitch_button('old')
+        elif value == 0:
+            self._highlight_pitch_button('normal')
+        else:  # value > 0
+            self._highlight_pitch_button('young')

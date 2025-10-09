@@ -10,12 +10,12 @@ transpose_old=-7
 transpose_young=12
 
 # Return Speed 
-return_speed_default=50
+return_speed_default=30
 return_speed_min=0
 return_speed_max=400
 
 # Flex Tune
-flex_tune_default=50
+flex_tune_default=40
 flex_tune_min=0
 flex_tune_max=100
 
@@ -35,7 +35,7 @@ soundshifter_pitch_min=-4
 soundshifter_pitch_max=4
 
 # Xvox Volume (Âm lượng mic)
-xvox_volume_default=45
+xvox_volume_default=40
 xvox_volume_min=30
 xvox_volume_max=60
 
@@ -50,12 +50,12 @@ volume_min=-7
 volume_max=0
 
 # Bass/Treble Mic (Điều chỉnh âm trầm/cao mic)
-bass_default=0
+bass_default=-10
 bass_min=-30
 bass_max=30
 bass_step=5
 
-treble_default=0
+treble_default=20
 treble_min=-20
 treble_max=30
 treble_step=5

@@ -503,10 +503,10 @@ class MainWindow:
         self.pause_auto_detect_for_manual_action()
 
         try:
-            # Update slider
-            if self.autotune_section and self.autotune_section.pitch_slider:
-                self.autotune_section.pitch_slider.set(pitch_value)
-                self.autotune_section.update_transpose_value(pitch_value)
+            # Update slider - THAY ĐỔI TỪ autotune_section SANG music_section
+            if self.music_section and self.music_section.pitch_slider:
+                self.music_section.pitch_slider.set(pitch_value)
+                self.music_section.update_transpose_value(pitch_value)
 
             # Apply to Cubase
             success = self.transpose_detector.set_pitch_value(pitch_value)

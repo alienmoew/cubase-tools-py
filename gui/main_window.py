@@ -400,12 +400,12 @@ class MainWindow:
             ('Return Speed', self.autotune_controls_detector.return_speed_detector,
              'return_speed_default', 200),
             ('Flex Tune', self.autotune_controls_detector.flex_tune_detector,
-             'flex_tune_default', 0),
-            ('Natural Vibrato', self.autotune_controls_detector.natural_vibrato_detector,
-             'natural_vibrato_default', 0),
-            ('Humanize', self.autotune_controls_detector.humanize_detector,
-             'humanize_default', 0),
-            ('Transpose', self.transpose_detector, 'transpose_default', 0)
+             'flex_tune_default', 0)
+            # ('Natural Vibrato', self.autotune_controls_detector.natural_vibrato_detector,
+            #  'natural_vibrato_default', 0),
+            # ('Humanize', self.autotune_controls_detector.humanize_detector,
+            #  'humanize_default', 0),
+            # ('Transpose', self.transpose_detector, 'transpose_default', 0)
         ]
 
         # Build parameters list for ultra fast processor
@@ -428,12 +428,12 @@ class MainWindow:
             success_count, total_count = ultra_processor.execute_ultra_fast_batch(
                 parameters_list)
 
-            # Update UI for transpose
-            if self.autotune_section and self.autotune_section.pitch_slider:
-                default_transpose = self.default_values.get(
-                    'transpose_default', 0)
-                self.autotune_section.pitch_slider.set(default_transpose)
-                self.autotune_section.update_transpose_value(default_transpose)
+            # # Update UI for transpose
+            # if self.autotune_section and self.autotune_section.pitch_slider:
+            #     default_transpose = self.default_values.get(
+            #         'transpose_default', 0)
+            #     self.autotune_section.pitch_slider.set(default_transpose)
+            #     self.autotune_section.update_transpose_value(default_transpose)
 
             print(
                 f"✅ Ultra fast batch reset completed: {success_count}/{total_count} success")

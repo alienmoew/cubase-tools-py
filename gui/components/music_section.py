@@ -121,6 +121,19 @@ class MusicSection(BaseComponent):
         )
         btn_lower.pack(side="left", padx=2)
         
+        # Thêm nút Bình thường
+        btn_normal = CTK.CTkButton(
+            btn_frame,
+            text="Bình thường",
+            font=("Arial", 10, "bold"),
+            command=self._reset_soundshifter,
+            width=75,
+            height=26,
+            fg_color="#1976D2",
+            hover_color="#1565C0"
+        )
+        btn_normal.pack(side="left", padx=2)
+        
         btn_raise = CTK.CTkButton(
             btn_frame,
             text="Tăng",

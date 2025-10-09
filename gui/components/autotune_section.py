@@ -186,7 +186,7 @@ class AutoTuneSection(BaseComponent):
         
         self.btn_pitch_old = CTK.CTkButton(
             btn_frame,
-            text="GIÀ",
+            text="Người Già",
             font=("Arial", 11, "bold"),
             command=self._apply_pitch_old,
             width=60,
@@ -198,10 +198,10 @@ class AutoTuneSection(BaseComponent):
         
         self.btn_pitch_normal = CTK.CTkButton(
             btn_frame,
-            text="BÌNH THƯỜNG",
+            text="Bình Thường",
             font=("Arial", 11, "bold"),
             command=self._apply_pitch_normal,
-            width=120,
+            width=100,
             height=26,
             fg_color="#7B1FA2",
             hover_color="#6A1B9A"
@@ -210,7 +210,7 @@ class AutoTuneSection(BaseComponent):
         
         self.btn_pitch_young = CTK.CTkButton(
             btn_frame,
-            text="TRẺ",
+            text="Trẻ Em",
             font=("Arial", 11, "bold"),
             command=self._apply_pitch_young,
             width=60,
@@ -265,6 +265,7 @@ class AutoTuneSection(BaseComponent):
         self._update_music_preset_display('nhac_tre')
         # 🧹 Reset highlight ban đầu
         self._highlight_active_preset(None)
+        
     
     def _create_bolero_preset(self, parent):
         """Tạo Bolero preset controls với màu hồng."""
@@ -274,60 +275,78 @@ class AutoTuneSection(BaseComponent):
         # Bind click event để apply preset khi click vào container
         self.bolero_container.bind("<Button-1>", lambda e: self._apply_preset_on_click('bolero'))
         
-        # Nút apply preset với tên "Bolero" (ở trên đầu)
+        # Header frame với title và level display
+        header_frame = CTK.CTkFrame(self.bolero_container, fg_color="transparent")
+        header_frame.pack(pady=(4, 2), padx=6, fill="x")
+        
+        # Nút apply preset với tên "Bolero" (bên trái)
         self.bolero_apply_circle = CTK.CTkButton(
-            self.bolero_container,
+            header_frame,
             text="Bolero",
             font=("Arial", 11, "bold"),
             command=lambda: self._apply_preset_on_click('bolero'),
-            width=100,
+            width=70,
             height=26,
             corner_radius=6,
             fg_color="#303F9F",
             hover_color="#283593",
             border_width=0
         )
-        self.bolero_apply_circle.pack(pady=(4, 2))
+        self.bolero_apply_circle.pack(side="left")
         
-        bolero_inner = CTK.CTkFrame(self.bolero_container, fg_color="transparent")
-        bolero_inner.pack(pady=5, padx=6)
+        # Level display (bên phải)
+        self.bolero_level_label = CTK.CTkLabel(
+            header_frame,
+            text="0",
+            font=("Arial", 10, "bold"),
+            text_color="#9FA8DA",
+            width=25
+        )
+        self.bolero_level_label.pack(side="right")
         
-        # Minus button - tự động apply khi bấm
+        # Button frame với các nút điều khiển
+        button_frame = CTK.CTkFrame(self.bolero_container, fg_color="transparent")
+        button_frame.pack(pady=(0, 5), padx=6)
+        
+        # Giảm button
         self.bolero_minus_btn = CTK.CTkButton(
-            bolero_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            button_frame,
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_and_apply_preset('bolero', -1),
-            width=28,
+            width=45,
             height=24,
             fg_color="#303F9F",
             hover_color="#283593"
         )
         self.bolero_minus_btn.pack(side="left", padx=(0, 3))
         
-        # Level display
-        self.bolero_level_label = CTK.CTkLabel(
-            bolero_inner,
-            text="0",
+        # Bình thường button
+        self.bolero_normal_btn = CTK.CTkButton(
+            button_frame,
+            text="Bình thường",
             font=("Arial", 10, "bold"),
-            text_color="#9FA8DA",
-            width=25
-        )
-        self.bolero_level_label.pack(side="left", padx=(0, 3))
-        
-        # Plus button - tự động apply khi bấm
-        self.bolero_plus_btn = CTK.CTkButton(
-            bolero_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
-            command=lambda: self._adjust_and_apply_preset('bolero', 1),
-            width=28,
+            command=lambda: self._reset_preset_level('bolero'),
+            width=75,
             height=24,
             fg_color="#303F9F",
             hover_color="#283593"
         )
-        self.bolero_plus_btn.pack(side="left", padx=(0, 0))
-    
+        self.bolero_normal_btn.pack(side="left", padx=(0, 3))
+        
+        # Tăng button
+        self.bolero_plus_btn = CTK.CTkButton(
+            button_frame,
+            text="Tăng",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._adjust_and_apply_preset('bolero', 1),
+            width=45,
+            height=24,
+            fg_color="#303F9F",
+            hover_color="#283593"
+        )
+        self.bolero_plus_btn.pack(side="left")
+
     def _create_nhac_tre_preset(self, parent):
         """Tạo Nhạc Trẻ preset controls với màu xanh tím/indigo."""
         self.nhac_tre_container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#3F51B5")
@@ -336,61 +355,90 @@ class AutoTuneSection(BaseComponent):
         # Bind click event để apply preset khi click vào container
         self.nhac_tre_container.bind("<Button-1>", lambda e: self._apply_preset_on_click('nhac_tre'))
         
-        # Nút apply preset với tên "Nhạc Trẻ" (ở trên đầu)
+        # Header frame với title và level display
+        header_frame = CTK.CTkFrame(self.nhac_tre_container, fg_color="transparent")
+        header_frame.pack(pady=(4, 2), padx=6, fill="x")
+        
+        # Nút apply preset với tên "Nhạc Trẻ" (bên trái)
         self.nhac_tre_apply_circle = CTK.CTkButton(
-            self.nhac_tre_container,
+            header_frame,
             text="Nhạc Trẻ",
             font=("Arial", 11, "bold"),
             command=lambda: self._apply_preset_on_click('nhac_tre'),
-            width=100,
+            width=70,
             height=26,
             corner_radius=6,
             fg_color="#303F9F",
             hover_color="#283593",
             border_width=0
         )
-        self.nhac_tre_apply_circle.pack(pady=(4, 2))
+        self.nhac_tre_apply_circle.pack(side="left")
         
-        nhac_tre_inner = CTK.CTkFrame(self.nhac_tre_container, fg_color="transparent")
-        nhac_tre_inner.pack(pady=5, padx=6)
+        # Level display (bên phải)
+        self.nhac_tre_level_label = CTK.CTkLabel(
+            header_frame,
+            text="0",
+            font=("Arial", 10, "bold"),
+            text_color="#9FA8DA",
+            width=25
+        )
+        self.nhac_tre_level_label.pack(side="right")
         
-        # Minus button - tự động apply khi bấm
+        # Button frame với các nút điều khiển
+        button_frame = CTK.CTkFrame(self.nhac_tre_container, fg_color="transparent")
+        button_frame.pack(pady=(0, 5), padx=6)
+        
+        # Giảm button
         self.nhac_tre_minus_btn = CTK.CTkButton(
-            nhac_tre_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            button_frame,
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_and_apply_preset('nhac_tre', -1),
-            width=28,
+            width=45,
             height=24,
             fg_color="#303F9F",
             hover_color="#283593"
         )
         self.nhac_tre_minus_btn.pack(side="left", padx=(0, 3))
         
-        # Level display
-        self.nhac_tre_level_label = CTK.CTkLabel(
-            nhac_tre_inner,
-            text="0",
+        # Bình thường button
+        self.nhac_tre_normal_btn = CTK.CTkButton(
+            button_frame,
+            text="Bình thường",
             font=("Arial", 10, "bold"),
-            text_color="#9FA8DA",
-            width=25
-        )
-        self.nhac_tre_level_label.pack(side="left", padx=(0, 3))
-        
-        # Plus button - tự động apply khi bấm
-        self.nhac_tre_plus_btn = CTK.CTkButton(
-            nhac_tre_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
-            command=lambda: self._adjust_and_apply_preset('nhac_tre', 1),
-            width=28,
+            command=lambda: self._reset_preset_level('nhac_tre'),
+            width=75,
             height=24,
             fg_color="#303F9F",
             hover_color="#283593"
         )
-        self.nhac_tre_plus_btn.pack(side="left", padx=(0, 0))
+        self.nhac_tre_normal_btn.pack(side="left", padx=(0, 3))
+        
+        # Tăng button
+        self.nhac_tre_plus_btn = CTK.CTkButton(
+            button_frame,
+            text="Tăng",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._adjust_and_apply_preset('nhac_tre', 1),
+            width=45,
+            height=24,
+            fg_color="#303F9F",
+            hover_color="#283593"
+        )
+        self.nhac_tre_plus_btn.pack(side="left")
     
     # ==================== EVENT HANDLERS ====================
+    def _reset_preset_level(self, music_type):
+        """Reset preset level về 0 và áp dụng lại."""
+        # 1. Đặt lại level của loại nhạc được chọn về 0
+        # Dòng mới (đúng)
+        self.main_window.music_presets_manager.current_levels[music_type] = 0
+        
+        # 2. Cập nhật lại giao diện để hiển thị level "0"
+        self._update_music_preset_display(music_type)
+        
+        # 3. Áp dụng preset ở level 0 (level "Bình thường")
+        self._apply_preset_on_click(music_type)
     
     def _execute_tone_detector(self):
         """Execute tone detector."""
@@ -423,7 +471,7 @@ class AutoTuneSection(BaseComponent):
     def _highlight_pitch_button(self, selected):
         """Highlight nút pitch đang được chọn với màu tím."""
         default_color = "#7B1FA2"  # Tím đậm (base)
-        active_color = "#BA68C8"   # Tím sáng (active)
+        active_color = "#F72585"   # Tím sáng (active)
         
         # Reset tất cả về màu base
         if self.btn_pitch_old:

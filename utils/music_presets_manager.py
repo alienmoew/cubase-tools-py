@@ -155,7 +155,7 @@ nhac_tre:+2:45:35:30:40"""
                 print(f"❌ Không thể áp dụng preset {music_type}:{level_string}")
                 return False
             
-            # Prepare ultra fast batch parameters
+            # Prepare ultra fast batch parameters - chỉ giữ lại Return Speed và Flex Tune
             parameters_list = [
                 {
                     'detector': gui_instance.autotune_controls_detector.return_speed_detector,
@@ -166,17 +166,18 @@ nhac_tre:+2:45:35:30:40"""
                     'detector': gui_instance.autotune_controls_detector.flex_tune_detector,
                     'value': preset_values['flex_tune'],
                     'name': 'Flex Tune'
-                },
-                {
-                    'detector': gui_instance.autotune_controls_detector.natural_vibrato_detector,
-                    'value': preset_values['natural_vibrato'],
-                    'name': 'Natural Vibrato'
-                },
-                {
-                    'detector': gui_instance.autotune_controls_detector.humanize_detector,
-                    'value': preset_values['humanize'],
-                    'name': 'Humanize'
                 }
+                # Các tham số khác được giữ lại trong code nhưng không sử dụng
+                # {
+                #     'detector': gui_instance.autotune_controls_detector.natural_vibrato_detector,
+                #     'value': preset_values['natural_vibrato'],
+                #     'name': 'Natural Vibrato'
+                # },
+                # {
+                #     'detector': gui_instance.autotune_controls_detector.humanize_detector,
+                #     'value': preset_values['humanize'],
+                #     'name': 'Humanize'
+                # }
             ]
             
             # Execute ultra fast batch
@@ -187,7 +188,7 @@ nhac_tre:+2:45:35:30:40"""
             ultra_processor = UltraFastAutoTuneProcessor()
             success_count, total_count = ultra_processor.execute_ultra_fast_batch(parameters_list)
             
-            # Update UI sliders instantly
+            # Update UI sliders instantly - chỉ cập nhật Return Speed và Flex Tune
             try:
                 gui_instance.return_speed_slider.set(preset_values['return_speed'])
                 gui_instance._on_return_speed_slider_change(preset_values['return_speed'])
@@ -195,11 +196,12 @@ nhac_tre:+2:45:35:30:40"""
                 gui_instance.flex_tune_slider.set(preset_values['flex_tune'])
                 gui_instance._on_flex_tune_slider_change(preset_values['flex_tune'])
                 
-                gui_instance.natural_vibrato_slider.set(preset_values['natural_vibrato'])
-                gui_instance._on_natural_vibrato_slider_change(preset_values['natural_vibrato'])
+                # Các cập nhật UI khác được giữ lại trong code nhưng không thực thi
+                # gui_instance.natural_vibrato_slider.set(preset_values['natural_vibrato'])
+                # gui_instance._on_natural_vibrato_slider_change(preset_values['natural_vibrato'])
                 
-                gui_instance.humanize_slider.set(preset_values['humanize'])
-                gui_instance._on_humanize_slider_change(preset_values['humanize'])
+                # gui_instance.humanize_slider.set(preset_values['humanize'])
+                # gui_instance._on_humanize_slider_change(preset_values['humanize'])
                 
             except Exception as e:
                 print(f"⚠️ UI update error: {e}")

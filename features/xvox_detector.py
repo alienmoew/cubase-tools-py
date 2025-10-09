@@ -106,7 +106,7 @@ class XVoxDetector(BaseFeature):
             MessageHelper.show_error("Lỗi Focus Window", "Không thể focus cửa sổ Cubase!")
             return None
         
-        time.sleep(0.3)
+        time.sleep(0.1)  # Giảm từ 0.3 xuống 0.1
         return hwnd
     
     def _find_template_match(self, plugin_win, template_path, control_name):
@@ -192,7 +192,7 @@ class XVoxDetector(BaseFeature):
             
             # 4. Focus plugin window
             plugin_win.activate()
-            time.sleep(0.3)
+            time.sleep(0.1)  # Giảm từ 0.3 xuống 0.1
             
             # 5. Find COMP template match
             match_result = self._find_template_match(plugin_win, self.comp_template_path, "COMP")
@@ -205,10 +205,10 @@ class XVoxDetector(BaseFeature):
             # 6. Perform COMP action
             print(f"👆 Clicking COMP center: ({click_x}, {click_y})")
             pyautogui.click(click_x, click_y)
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             
-            print("⏰ Waiting 0.5s...")
-            time.sleep(0.5)
+            print("⏰ Waiting 0.2s...")  # Giảm từ 0.5s xuống 0.2s
+            time.sleep(0.2)
             
             # Click above template for input field
             estimated_template_height = 100
@@ -216,15 +216,15 @@ class XVoxDetector(BaseFeature):
             top_click_y = template_top_y - 15
             print(f"👆 Double clicking above template: ({click_x}, {top_click_y})")
             pyautogui.doubleClick(click_x, top_click_y)
-            time.sleep(0.2)
+            time.sleep(0.1)  # Giảm từ 0.2 xuống 0.1
             
             print(f"⌨️ Typing COMP value: {value}")
             pyautogui.typewrite(str(value))
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             
             print("↩️ Pressing Enter")
             pyautogui.press('enter')
-            time.sleep(0.2)
+            time.sleep(0.1)  # Giảm từ 0.2 xuống 0.1
             
             print(f"✅ COMP set to {value} successfully")
             self.current_comp = value
@@ -262,7 +262,7 @@ class XVoxDetector(BaseFeature):
                 return False
             
             plugin_win.activate()
-            time.sleep(0.3)
+            time.sleep(0.1)  # Giảm từ 0.3 xuống 0.1
             
             # 5. Find Reverb template match
             match_result = self._find_template_match(plugin_win, self.reverb_template_path, "Reverb")
@@ -275,25 +275,25 @@ class XVoxDetector(BaseFeature):
             # 6. Perform Reverb action (similar to COMP)
             print(f"👆 Clicking Reverb center: ({click_x}, {click_y})")
             pyautogui.click(click_x, click_y)
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             
-            print("⏰ Waiting 0.5s...")
-            time.sleep(0.5)
+            print("⏰ Waiting 0.2s...")  # Giảm từ 0.5s xuống 0.2s
+            time.sleep(0.2)
             
             estimated_template_height = 100
             template_top_y = click_y - (estimated_template_height // 2)
             top_click_y = template_top_y - 15
             print(f"👆 Double clicking above template: ({click_x}, {top_click_y})")
             pyautogui.doubleClick(click_x, top_click_y)
-            time.sleep(0.2)
+            time.sleep(0.1)  # Giảm từ 0.2 xuống 0.1
             
             print(f"⌨️ Typing Reverb value: {value}")
             pyautogui.typewrite(str(value))
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             
             print("↩️ Pressing Enter")
             pyautogui.press('enter')
-            time.sleep(0.2)
+            time.sleep(0.1)  # Giảm từ 0.2 xuống 0.1
             
             print(f"✅ Reverb set to {value} successfully")
             self.current_reverb = value
@@ -331,7 +331,7 @@ class XVoxDetector(BaseFeature):
                 return False
             
             plugin_win.activate()
-            time.sleep(0.3)
+            time.sleep(0.1)  # Giảm từ 0.3 xuống 0.1
             
             # 4. Find tone mic template và OCR để tìm LOW text (like original)
             result = self._find_tone_mic_template(plugin_win)
@@ -344,7 +344,7 @@ class XVoxDetector(BaseFeature):
             
             # 5. Click vào LOW text
             pyautogui.click(low_pos[0], low_pos[1])
-            time.sleep(0.2)
+            time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print(f"🖱 Clicked on LOW text at {low_pos}")
             
             # 6. Click ở vị trí chiều dọc 35% từ trên xuống (convert to absolute coordinates)
@@ -357,20 +357,20 @@ class XVoxDetector(BaseFeature):
             click_x = low_pos[0]
             
             pyautogui.click(click_x, click_y)
-            time.sleep(0.2)
+            time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print(f"🖱 Clicked at 35% position: ({click_x}, {click_y})")
             
             # 7. Select text and input value
             pyautogui.tripleClick(click_x, click_y)
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             print("🖱 Triple-clicked to select text")
             
             pyautogui.typewrite(str(value))
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             print(f"⌨️ Typed value: {value}")
             
             pyautogui.press('enter')
-            time.sleep(0.2)
+            time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print("⌨️ Pressed Enter to confirm")
             
             print(f"✅ Successfully set Bass (LOW) to {value}")
@@ -407,7 +407,7 @@ class XVoxDetector(BaseFeature):
                 return False
             
             plugin_win.activate()
-            time.sleep(0.3)
+            time.sleep(0.1)  # Giảm từ 0.3 xuống 0.1
             
             # 4. Find tone mic template và OCR để tìm HIGH text (like original)
             result = self._find_tone_mic_template(plugin_win)
@@ -420,7 +420,7 @@ class XVoxDetector(BaseFeature):
             
             # 5. Click vào HIGH text
             pyautogui.click(high_pos[0], high_pos[1])
-            time.sleep(0.2)
+            time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print(f"🖱 Clicked on HIGH text at {high_pos}")
             
             # 6. Click ở vị trí chiều dọc 35% từ trên xuống (convert to absolute coordinates)
@@ -433,20 +433,20 @@ class XVoxDetector(BaseFeature):
             click_x = high_pos[0]
             
             pyautogui.click(click_x, click_y)
-            time.sleep(0.2)
+            time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print(f"🖱 Clicked at 35% position: ({click_x}, {click_y})")
             
             # 7. Select text and input value
             pyautogui.tripleClick(click_x, click_y)
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             print("🖱 Triple-clicked to select text")
             
             pyautogui.typewrite(str(value))
-            time.sleep(0.1)
+            time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             print(f"⌨️ Typed value: {value}")
             
             pyautogui.press('enter')
-            time.sleep(0.2)
+            time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print("⌨️ Pressed Enter to confirm")
             
             print(f"✅ Successfully set Treble (HIGH) to {value}")
@@ -461,7 +461,7 @@ class XVoxDetector(BaseFeature):
             pyautogui.moveTo(original_pos[0], original_pos[1])
     
     def _find_tone_mic_template(self, xvox_window):
-        """Tìm tone mic template và OCR vùng đó để tìm LOW/HIGH trong XVox plugin (copied from original)."""
+        """Tìm tone mic template và OCR vùng đó để tìm LOW/HIGH trong XVox plugin (cải tiến)."""
         try:
             # Lấy thông tin cửa sổ XVox
             x, y, w, h = xvox_window.left, xvox_window.top, xvox_window.width, xvox_window.height
@@ -528,7 +528,9 @@ class XVoxDetector(BaseFeature):
             # Tìm vị trí LOW và HIGH
             low_pos = None
             high_pos = None
+            low_index = -1  # Lưu index của LOW để tìm HIGH
             
+            # Bước 1: Tìm vị trí LOW
             for i, text in enumerate(ocr_data["text"]):
                 if text and text.strip():
                     text_clean = text.strip().upper()
@@ -538,18 +540,46 @@ class XVoxDetector(BaseFeature):
                         low_x = x + ocr_x + ocr_data["left"][i] + ocr_data["width"][i] // 2
                         low_y = y + ocr_y + ocr_data["top"][i] + ocr_data["height"][i] // 2
                         low_pos = (low_x, low_y)
-                        print(f"🔉 Found LOW at: ({low_x}, {low_y})")
+                        low_index = i
+                        print(f"🔉 Found LOW at index {i}: ({low_x}, {low_y})")
+                        break
+            
+            # Bước 2: Tìm vị trí HIGH
+            # 2a. Thử tìm trực tiếp từ OCR
+            for i, text in enumerate(ocr_data["text"]):
+                if text and text.strip():
+                    text_clean = text.strip().upper()
                     
-                    elif "HIGH" in text_clean:
+                    if "HIGH" in text_clean:
                         # Tính vị trí absolute của HIGH
                         high_x = x + ocr_x + ocr_data["left"][i] + ocr_data["width"][i] // 2
                         high_y = y + ocr_y + ocr_data["top"][i] + ocr_data["height"][i] // 2
                         high_pos = (high_x, high_y)
-                        print(f"🔊 Found HIGH at: ({high_x}, {high_y})")
+                        print(f"🔊 Found HIGH at index {i}: ({high_x}, {high_y})")
+                        break
             
-            # Fallback logic: position-based approach
+            # 2b. Nếu không tìm thấy HIGH, sử dụng vị trí cách LOW hai đơn vị
+            if not high_pos and low_index >= 0:
+                # Theo log của bạn, HIGH cách LOW 2 đơn vị trong mảng
+                high_index = low_index + 2  # Vị trí cách LOW hai đơn vị
+                
+                # Kiểm tra xem index có hợp lệ không
+                if high_index < len(ocr_data["text"]):
+                    high_text = ocr_data["text"][high_index]
+                    if high_text and high_text.strip():
+                        # Tính vị trí absolute của HIGH (dựa vào vị trí cách LOW hai đơn vị)
+                        high_x = x + ocr_x + ocr_data["left"][high_index] + ocr_data["width"][high_index] // 2
+                        high_y = y + ocr_y + ocr_data["top"][high_index] + ocr_data["height"][high_index] // 2
+                        high_pos = (high_x, high_y)
+                        print(f"🔊 Found HIGH at index {high_index} (text: '{high_text}'): ({high_x}, {high_y})")
+                    else:
+                        print(f"⚠️ Text at position {high_index} is empty")
+                else:
+                    print(f"⚠️ Position {high_index} is out of range")
+            
+            # 2c. Nếu vẫn không tìm thấy, thử phương pháp dựa trên vị trí (fallback)
             if not low_pos or not high_pos:
-                print("⚠️ OCR không detect đủ LOW/HIGH, sử dụng position-based fallback...")
+                print("⚠️ Sử dụng phương pháp dựa trên vị trí (fallback)...")
                 
                 # Lọc ra các text có content
                 valid_texts = []
@@ -584,7 +614,7 @@ class XVoxDetector(BaseFeature):
                         high_y = y + ocr_y + high_info['top'] + high_info['height'] // 2
                         high_pos = (high_x, high_y)
                         print(f"🔊 Fallback HIGH ('{high_info['text']}') at: ({high_x}, {high_y})")
-                        
+            
             # Save debug image 
             debug_filename = "tone_mic_ocr_debug.png"
             debug_path = ImageHelper.save_template_debug_image(
@@ -619,7 +649,7 @@ class XVoxDetector(BaseFeature):
         print("📖 OCR on grayscale region...")
         ocr_data = OCRHelper.extract_text_data(screenshot_pil)
         words = OCRHelper.get_text_words(ocr_data)
-        print(f"� OCR text in tone mic region: {words}")
+        print(f"📜 OCR text in tone mic region: {words}")
         
         target_pos = None
         
@@ -661,24 +691,24 @@ class XVoxDetector(BaseFeature):
         click_x = target_pos[0]
         
         pyautogui.click(click_x, click_y)
-        time.sleep(0.2)
+        time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
         print(f"🖱 Clicked at 40% position: ({click_x}, {click_y})")
         
         # Select text and input value
         pyautogui.tripleClick(click_x, click_y)
-        time.sleep(0.1)
+        time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
         print("🖱 Triple-clicked to select text")
         
         pyautogui.hotkey('ctrl', 'a')
-        time.sleep(0.1)
+        time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
         print("⌨️ Also tried Ctrl+A")
         
         pyautogui.typewrite(str(value))
-        time.sleep(0.1)
+        time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
         print(f"⌨️ Typed value: {value}")
         
         pyautogui.press('enter')
-        time.sleep(0.2)
+        time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
         print("⌨️ Pressed Enter to confirm")
         
         print(f"✅ Successfully set {control_name} ({target_text}) to {value}")

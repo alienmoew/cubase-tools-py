@@ -141,12 +141,25 @@ class VocalSection(BaseComponent):
             text="Giảm",
             font=("Arial", 10, "bold"),
             command=lambda: self._adjust_volume_mic_instant(-1),
-            width=50,
+            width=40,
             height=26,
             fg_color="#D32F2F",
             hover_color="#C62828"
         )
         self.volume_mic_decrease_btn.pack(side="left", padx=2)
+        
+        # Mute Mic button (Ctrl+M)
+        self.mute_mic_btn = CTK.CTkButton(
+            volume_mic_inner,
+            text="M",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._toggle_mic_mute(),
+            width=30,
+            height=26,
+            fg_color="#E91E63",
+            hover_color="#C2185B"
+        )
+        self.mute_mic_btn.pack(side="left", padx=2)
         
         # COMP value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
         self.volume_mic_value_label = CTK.CTkLabel(
@@ -164,7 +177,7 @@ class VocalSection(BaseComponent):
             text="Tăng",
             font=("Arial", 10, "bold"),
             command=lambda: self._adjust_volume_mic_instant(1),
-            width=50,
+            width=40,
             height=26,
             fg_color="#D32F2F",
             hover_color="#C62828"
@@ -385,3 +398,7 @@ class VocalSection(BaseComponent):
     def _adjust_reverb_mic_instant(self, direction):
         """Điều chỉnh Reverb ngay lập tức."""
         self.main_window._adjust_reverb_mic_instant(direction)
+    
+    def _toggle_mic_mute(self):
+        """Toggle mute mic (Ctrl+M) trong Cubase."""
+        self.main_window._toggle_mic_mute()

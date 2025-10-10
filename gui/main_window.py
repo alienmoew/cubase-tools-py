@@ -14,7 +14,6 @@ from features.soundshifter_detector import SoundShifterDetector
 from features.soundshifter_bypass_detector import SoundShifterBypassDetector
 from features.proq3_bypass_detector import ProQ3BypassDetector
 from features.xvox_detector import XVoxDetector
-from features.volume_detector import VolumeDetector
 from features.system_volume_detector import SystemVolumeDetector
 from utils.settings_manager import SettingsManager
 from utils.helpers import ConfigHelper, MessageHelper
@@ -74,7 +73,6 @@ class MainWindow:
         self.soundshifter_bypass_detector = SoundShifterBypassDetector()
         self.proq3_bypass_detector = ProQ3BypassDetector()
         self.xvox_detector = XVoxDetector()
-        self.volume_detector = VolumeDetector()
 
         # System Volume Detector (Windows Audio Session)
         app_name = self.default_values.get(
@@ -868,6 +866,115 @@ class MainWindow:
             self.resume_auto_detect_after_manual_action()
             # Minimize plugins after action
             self._minimize_plugins_after_action()
+
+    def _toggle_mic_mute(self):
+        """Toggle mute mic trong Cubase (Ctrl+M)."""
+        self.pause_auto_detect_for_manual_action()
+
+        try:
+            from utils.process_finder import CubaseProcessFinder
+            from utils.window_manager import WindowManager
+            import pyautogui
+            import time
+            import win32gui
+            import win32process
+
+            print("=" * 60)
+            print("🎤 [MIC MUTE] Starting toggle mic mute...")
+
+            # 1. Tìm Cubase process
+            cubase_proc = CubaseProcessFinder.find()
+            if not cubase_proc:
+                print("❌ [MIC MUTE] Không tìm thấy Cubase process!")
+                return
+            
+            pid = cubase_proc.info['pid']
+            print(f"✅ [MIC MUTE] Found Cubase process: PID={pid}")
+
+            # 2. Tìm MAIN Cubase project window (không phải plugin window)
+            print(f"🔍 [MIC MUTE] Finding main Cubase project window...")
+            
+            main_hwnd = None
+            
+            def find_main_window(hwnd, extra):
+                nonlocal main_hwnd
+                try:
+                    if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+                        _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+                        if found_pid == pid:
+                            title = win32gui.GetWindowText(hwnd)
+                            # Tìm window có title chứa "Cubase" và "Project" (cửa sổ chính)
+                            # Và KHÔNG phải là plugin window (Ins., AUTO-TUNE, XVox, etc.)
+                            if title and 'cubase' in title.lower() and 'project' in title.lower():
+                                if not any(x in title.lower() for x in ['ins.', 'auto-tune', 'xvox', 'soundshifter', 'pro-q']):
+                                    print(f"   🎯 Found main window: '{title}'")
+                                    main_hwnd = hwnd
+                                    return False  # Stop enumeration
+                except Exception:
+                    pass
+                return True
+            
+            win32gui.EnumWindows(find_main_window, None)
+            
+            if not main_hwnd:
+                print("⚠️ [MIC MUTE] Không tìm thấy main Cubase window, thử fallback...")
+                # Fallback: Tìm bất kỳ window nào có "Cubase" và không phải plugin
+                def find_any_cubase_window(hwnd, extra):
+                    nonlocal main_hwnd
+                    try:
+                        if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+                            _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+                            if found_pid == pid:
+                                title = win32gui.GetWindowText(hwnd)
+                                if title and 'cubase' in title.lower():
+                                    if not any(x in title.lower() for x in ['ins.', 'auto-tune', 'xvox', 'soundshifter', 'pro-q']):
+                                        print(f"   🎯 Found fallback window: '{title}'")
+                                        main_hwnd = hwnd
+                                        return False
+                    except Exception:
+                        pass
+                    return True
+                
+                win32gui.EnumWindows(find_any_cubase_window, None)
+            
+            if not main_hwnd:
+                print("❌ [MIC MUTE] Không thể tìm main Cubase window!")
+                return
+            
+            # 3. Focus main Cubase window
+            try:
+                title = win32gui.GetWindowText(main_hwnd)
+                print(f"✅ [MIC MUTE] Focusing main window: '{title}' (HWND={main_hwnd})")
+                
+                win32gui.ShowWindow(main_hwnd, 9)  # SW_RESTORE
+                win32gui.BringWindowToTop(main_hwnd)
+                win32gui.SetForegroundWindow(main_hwnd)
+            except Exception as e:
+                print(f"❌ [MIC MUTE] Lỗi khi focus window: {e}")
+                return
+
+            # 4. Đợi window được focus
+            time.sleep(0.3)
+
+            # 5. Nhấn Ctrl+M
+            print(f"⌨️ [MIC MUTE] Sending Ctrl+M...")
+            pyautogui.keyDown('ctrl')
+            time.sleep(0.05)
+            pyautogui.press('m')
+            time.sleep(0.05)
+            pyautogui.keyUp('ctrl')
+            
+            print("✅ [MIC MUTE] Đã nhấn Ctrl+M để toggle mute mic")
+            print("=" * 60)
+
+        except Exception as e:
+            print(f"❌ [MIC MUTE] Lỗi khi toggle mic mute: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            self.resume_auto_detect_after_manual_action()
+            # Không minimize plugins để user có thể thấy kết quả
+            # self._minimize_plugins_after_action()
 
     # ==================== PLUGIN TOGGLE ====================
 

@@ -13,48 +13,42 @@ class CubaseToolsBuilder:
     def __init__(self):
         self.project_dir = Path(__file__).parent
         self.dist_dir = self.project_dir / "dist"
-        self.exe_name = "CubaseAutoTools.exe"
+        self.exe_name = "Auto Tools - KT Studio.exe"
         self.config_files = [
             "settings.json",
-            "default_values.txt", 
+            "default_values.txt",
             "music_presets.txt"
         ]
-        
+
     def clean_build_dirs(self):
         """Xóa các thư mục build cũ"""
         print("🧹 Cleaning old build directories...")
-        
-        dirs_to_clean = ["build", "dist", "__pycache__"]
-        for dir_name in dirs_to_clean:
+        for dir_name in ["build", "dist", "__pycache__"]:
             dir_path = self.project_dir / dir_name
             if dir_path.exists():
                 shutil.rmtree(dir_path)
                 print(f"   Removed: {dir_path}")
-    
+
     def check_tesseract(self):
         """Kiểm tra Tesseract OCR installation"""
         tesseract_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
         if os.path.exists(tesseract_path):
             print("✅ Tesseract OCR found - will be included in build")
             return True
-        else:
-            print("⚠️  Tesseract OCR not found - OCR features may not work")
-            print("   Install from: https://github.com/UB-Mannheim/tesseract/wiki")
-            return False
+        print("⚠️  Tesseract OCR not found - OCR features may not work")
+        print("   Install from: https://github.com/UB-Mannheim/tesseract/wiki")
+        return False
 
     def build_exe(self):
         """Build exe bằng PyInstaller"""
         print("🔨 Building executable with PyInstaller...")
-        
-        # Check tesseract
         self.check_tesseract()
-        
+
         spec_file = self.project_dir / "cubase_tools.spec"
         if not spec_file.exists():
             print("❌ Spec file not found! Please create cubase_tools.spec first.")
             return False
-            
-        # Run PyInstaller
+
         cmd = ["pyinstaller", "--clean", str(spec_file)]
         try:
             result = subprocess.run(cmd, cwd=self.project_dir, capture_output=True, text=True)
@@ -62,157 +56,76 @@ class CubaseToolsBuilder:
                 print("❌ PyInstaller build failed:")
                 print(result.stderr)
                 return False
-            else:
-                print("✅ PyInstaller build successful!")
-                return True
+            print("✅ PyInstaller build successful!")
+            return True
         except Exception as e:
             print(f"❌ Error running PyInstaller: {e}")
             return False
-    
-    def create_default_config_files(self):
-        """Tạo các file config mặc định"""
-        print("📝 Creating default config files...")
-        
-        config_templates = {
-            "settings.json": """{
-  "theme": "dark",
-  "auto_detect": false
-}""",
-            
-            "default_values.txt": """# Default Values Configuration
-# Format: key=value
 
-# Volume settings
-default_volume=75
-min_volume=0
-max_volume=100
-
-# Auto-tune settings  
-default_return_speed=40
-default_flex_tune=30
-default_natural_vibrato=25
-default_humanize=35
-
-# Transpose settings
-default_transpose=0
-min_transpose=-12
-max_transpose=12
-
-# Timing settings
-detection_delay=0.5
-processing_timeout=10""",
-
-            "music_presets.txt": """# Music Presets Configuration
-# Format: music_type:level:return_speed:flex_tune:natural_vibrato:humanize
-# Levels: -2, -1, 0, +1, +2
-
-# Bolero presets
-bolero:-2:30:20:15:25
-bolero:-1:35:25:20:30
-bolero:0:40:30:25:35
-bolero:+1:45:35:30:40
-bolero:+2:50:40:35:45
-
-# Nhạc trẻ presets  
-nhac_tre:-2:25:15:10:20
-nhac_tre:-1:30:20:15:25
-nhac_tre:0:35:25:20:30
-nhac_tre:+1:40:30:25:35
-nhac_tre:+2:45:35:30:40"""
-        }
-        
-        return config_templates
-    
     def prepare_config_directory(self):
-        """Chuẩn bị thư mục config bên ngoài exe"""
+        """Copy các file config có sẵn từ project"""
         print("📁 Preparing external config directory...")
-        
         exe_path = self.dist_dir / self.exe_name
         if not exe_path.exists():
             print(f"❌ Executable not found: {exe_path}")
             return False
-            
-        # Tạo thư mục config
+
         config_dir = self.dist_dir / "config"
         config_dir.mkdir(exist_ok=True)
-        
-        # Copy các file config từ project
+
         for config_file in self.config_files:
             source_path = self.project_dir / config_file
             target_path = config_dir / config_file
-            
             if source_path.exists():
-                # Copy existing config file from project
                 shutil.copy2(source_path, target_path)
-                print(f"   Copied: {config_file}")
+                print(f"   ✅ Copied: {config_file}")
             else:
                 print(f"   ⚠️  Not found: {config_file}")
-        
         return True
-    
+
     def copy_required_directories(self):
         """Copy các thư mục cần thiết"""
         print("📂 Copying required directories...")
-        
-        dirs_to_copy = ["templates", "result"]
-        
-        for dir_name in dirs_to_copy:
+        for dir_name in ["templates", "result"]:
             source_dir = self.project_dir / dir_name
             target_dir = self.dist_dir / dir_name
-            
             if source_dir.exists():
                 if target_dir.exists():
                     shutil.rmtree(target_dir)
                 shutil.copytree(source_dir, target_dir)
-                print(f"   Copied: {dir_name}")
+                print(f"   ✅ Copied: {dir_name}")
             else:
                 print(f"   ⚠️  Not found: {dir_name}")
-    
 
-    
     def build_all(self):
         """Build toàn bộ project"""
         print("🚀 Starting Cubase Auto Tools build process...\n")
-        
         try:
-            # Step 1: Clean
             self.clean_build_dirs()
             print()
-            
-            # Step 2: Build exe
             if not self.build_exe():
                 return False
             print()
-            
-            # Step 3: Prepare config
             if not self.prepare_config_directory():
                 return False
             print()
-            
-            # Step 4: Copy directories
             self.copy_required_directories()
             print()
-            
             print("✅ Build completed successfully!")
             print(f"📁 Output directory: {self.dist_dir}")
             print(f"🚀 Executable: {self.dist_dir / self.exe_name}")
             print(f"⚙️  Config files: {self.dist_dir / 'config'}")
-            print(f"\n🎉 Ready to distribute!")
-            
+            print("\n🎉 Ready to distribute!")
             return True
-            
         except Exception as e:
             print(f"❌ Build failed: {e}")
             return False
 
 def main():
-    """Main build function"""
     builder = CubaseToolsBuilder()
-    
     if len(sys.argv) > 1 and sys.argv[1] == "--clean-only":
         builder.clean_build_dirs()
         return
-    
     success = builder.build_all()
     sys.exit(0 if success else 1)
 

@@ -5,14 +5,14 @@ echo ========================================
 echo.
 
 :: Check if dist directory exists
-if not exist "dist\CubaseAutoTools.exe" (
+if not exist "dist\Auto Tools - KT Studio.exe" (
     echo ❌ Executable not found! Please run build.bat first.
     pause
     exit /b 1
 )
 
 :: Create package directory
-set "PACKAGE_NAME=final\CubaseAutoTools_v1.0_Portable"
+set "PACKAGE_NAME=final\Auto Tools - KT Studio"
 set "PACKAGE_DIR=%PACKAGE_NAME%"
 
 if exist "%PACKAGE_DIR%" (
@@ -25,14 +25,12 @@ mkdir "%PACKAGE_DIR%"
 
 :: Copy exe and required files
 echo 📋 Copying files...
-copy "dist\CubaseAutoTools.exe" "%PACKAGE_DIR%\"
-copy "dist\README.txt" "%PACKAGE_DIR%\"
+copy "dist\Auto Tools - KT Studio.exe" "%PACKAGE_DIR%\"
 
 :: Copy directories
 echo 📂 Copying directories...
 xcopy "dist\config" "%PACKAGE_DIR%\config\" /e /i /y
 xcopy "dist\templates" "%PACKAGE_DIR%\templates\" /e /i /y
-xcopy "dist\result" "%PACKAGE_DIR%\result\" /e /i /y
 
 :: Create installation guide
 echo 📄 Creating installation guide...
@@ -42,11 +40,10 @@ echo.
 echo ## Cài đặt và sử dụng:
 echo 1. Giải nén file này vào thư mục bất kỳ
 echo 2. Chạy file CubaseAutoTools.exe
-echo 3. Đảm bảo Cubase đang mở và có plugin AUTO-TUNE PRO
+echo 3. Đảm bảo Cubase đang mở và có plugin
 echo.
 echo ## Tùy chỉnh cấu hình:
 echo - Chỉnh sửa file trong thư mục config/ theo nhu cầu:
-echo   * settings.json: Giao diện và cài đặt tự động
 echo   * default_values.txt: Giá trị mặc định
 echo   * music_presets.txt: Template cho nhạc Bolero và Nhạc trẻ
 echo.

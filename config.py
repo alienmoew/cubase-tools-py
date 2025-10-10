@@ -144,6 +144,6 @@ UI_SETTINGS = {
 }
 
 # App Information
-APP_NAME = "Cubase Auto Tools"
+APP_NAME = "Auto Tools - KT Studio"
 APP_VERSION = "v1.0"
 COPYRIGHT = f"© {CONTACT_INFO['studio']} - {CONTACT_INFO['phone']}"

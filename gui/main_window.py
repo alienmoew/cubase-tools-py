@@ -2,6 +2,7 @@
 Main Window - Coordinator chính cho Cubase Auto Tool GUI.
 Quản lý tất cả components và business logic.
 """
+import os, sys
 import customtkinter as CTK
 import threading
 
@@ -39,6 +40,14 @@ class MainWindow:
 
     def __init__(self):
         """Initialize main window và tất cả resources."""
+        # --- Fix icon taskbar (Windows only) ---
+        import ctypes
+        myappid = 'ktstudio.autotools'  # tên app tùy ý
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception:
+            pass
+        # ---------------------------------------
         # Initialize managers
         self.settings_manager = SettingsManager()
         self.default_values = ConfigHelper.load_default_values()
@@ -52,6 +61,13 @@ class MainWindow:
         self.root.title(f"{config.APP_NAME} {config.APP_VERSION}")
         self.root.geometry("1000x320")  # Increased height for larger fonts
         self.root.resizable(False, False)
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(base_path, "icon.ico")
+
+        try:
+            self.root.iconbitmap(icon_path)
+        except Exception as e:
+            print(f"⚠️ Could not set window icon: {e}")
 
         # Window state
         self.root.lift()

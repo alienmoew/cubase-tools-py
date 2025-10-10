@@ -52,12 +52,46 @@ class WindowManager:
         except Exception as e:
             print(f"❌ Critical error in focus_window_by_pid: {e}")
             return None
+    
+    @staticmethod
+    def minimize_window_by_pid(pid):
+        """Minimize window by process ID."""
+        hwnd_found = []
+
+        def callback(hwnd, extra):
+            try:
+                if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+                    _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+                    if found_pid == pid:
+                        # Minimize window
+                        win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
+                        hwnd_found.append(hwnd)
+            except Exception as e:
+                print(f"⚠️ Window minimize callback error: {e}")
+                pass
+
+        try:
+            win32gui.EnumWindows(callback, None)
+            return hwnd_found[0] if hwnd_found else None
+            
+        except Exception as e:
+            print(f"❌ Critical error in minimize_window_by_pid: {e}")
+            return None
 
     @staticmethod
     def find_window(title_keyword):
         windows = gw.getWindowsWithTitle(title_keyword)
         if windows:
             return windows[0]
+        return None
+    
+    @staticmethod
+    def find_window_containing(keyword):
+        """Tìm cửa sổ có title chứa keyword (case-insensitive)."""
+        all_windows = gw.getAllWindows()
+        for window in all_windows:
+            if keyword.lower() in window.title.lower():
+                return window
         return None
 
     @staticmethod

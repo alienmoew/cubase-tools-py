@@ -104,149 +104,23 @@ class VocalSection(BaseComponent):
         mic_controls_grid.grid_rowconfigure(0, weight=1)
         mic_controls_grid.grid_rowconfigure(1, weight=1)
         
-        # Bass (Top Left)
-        self._create_bass_control(mic_controls_grid)
-        
-        # Treble (Top Right)
-        self._create_treble_control(mic_controls_grid)
-        
-        # COMP (Bottom Left)
+        # Âm lượng Mic (Top Left) - ĐỔI VỊ TRÍ
         self._create_volume_mic_control(mic_controls_grid)
         
-        # Reverb (Bottom Right)
+        # Độ vang (Top Right) - ĐỔI VỊ TRÍ
         self._create_reverb_control(mic_controls_grid)
-    
-    def _create_bass_control(self, parent):
-        """Tạo Bass control với màu cam."""
-        bass_frame = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#FF9800")
-        # SỬ DỤNG PADDING ĐỒNG ĐỀU VÀ NHỎ HƠN
-        bass_frame.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
         
-        # Label ở trên
-        bass_label = CTK.CTkLabel(
-            bass_frame,
-            text="Bass",
-            font=("Arial", 11, "bold"),
-            text_color="#FFB74D"
-        )
-        bass_label.pack(pady=(4, 1))
+        # Bass (Bottom Left) - ĐỔI VỊ TRÍ
+        self._create_bass_control(mic_controls_grid)
         
-        # Buttons ở dưới
-        bass_inner = CTK.CTkFrame(bass_frame, fg_color="transparent")
-        bass_inner.pack(pady=(1, 4))
-        
-        # Decrease button
-        self.bass_decrease_btn = CTK.CTkButton(
-            bass_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
-            command=lambda: self._adjust_bass_instant(-1),
-            width=35,
-            height=26,
-            fg_color="#F57C00",
-            hover_color="#E65100"
-        )
-        self.bass_decrease_btn.pack(side="left", padx=2)
-        
-        # Bass value display
-        self.bass_value_label = CTK.CTkLabel(
-            bass_inner,
-            text="0",
-            font=("Arial", 11, "bold"),
-            text_color="#FFB74D",
-            width=40
-        )
-        self.bass_value_label.pack(side="left", padx=2)
-        
-        # Increase button
-        self.bass_increase_btn = CTK.CTkButton(
-            bass_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
-            command=lambda: self._adjust_bass_instant(1),
-            width=35,
-            height=26,
-            fg_color="#F57C00",
-            hover_color="#E65100"
-        )
-        self.bass_increase_btn.pack(side="left", padx=2)
-        
-        # Hidden slider for internal state
-        self.bass_slider = CTK.CTkSlider(bass_frame, width=0, height=0)
-        self.bass_slider.configure(
-            from_=self.default_values.get('bass_min', -30),
-            to=self.default_values.get('bass_max', 30)
-        )
-        self.bass_slider.set(self.default_values.get('bass_default', 0))
-    
-    def _create_treble_control(self, parent):
-        """Tạo Treble control với màu xanh lá."""
-        treble_frame = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#4CAF50")
-        # SỬ DỤNG PADDING ĐỒNG ĐỀU VÀ NHỎ HƠN
-        treble_frame.grid(row=0, column=1, sticky="nsew", padx=1, pady=1)
-        
-        # Label ở trên
-        treble_label = CTK.CTkLabel(
-            treble_frame,
-            text="Treble",
-            font=("Arial", 11, "bold"),
-            text_color="#81C784"
-        )
-        treble_label.pack(pady=(4, 1))
-        
-        # Buttons ở dưới
-        treble_inner = CTK.CTkFrame(treble_frame, fg_color="transparent")
-        treble_inner.pack(pady=(1, 4))
-        
-        # Decrease button
-        self.treble_decrease_btn = CTK.CTkButton(
-            treble_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
-            command=lambda: self._adjust_treble_instant(-1),
-            width=35,
-            height=26,
-            fg_color="#388E3C",
-            hover_color="#2E7D32"
-        )
-        self.treble_decrease_btn.pack(side="left", padx=2)
-        
-        # Treble value display
-        self.treble_value_label = CTK.CTkLabel(
-            treble_inner,
-            text="0",
-            font=("Arial", 11, "bold"),
-            text_color="#81C784",
-            width=40
-        )
-        self.treble_value_label.pack(side="left", padx=2)
-        
-        # Increase button
-        self.treble_increase_btn = CTK.CTkButton(
-            treble_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
-            command=lambda: self._adjust_treble_instant(1),
-            width=35,
-            height=26,
-            fg_color="#388E3C",
-            hover_color="#2E7D32"
-        )
-        self.treble_increase_btn.pack(side="left", padx=2)
-        
-        # Hidden slider for internal state
-        self.treble_slider = CTK.CTkSlider(treble_frame, width=0, height=0)
-        self.treble_slider.configure(
-            from_=self.default_values.get('treble_min', -20),
-            to=self.default_values.get('treble_max', 30)
-        )
-        self.treble_slider.set(self.default_values.get('treble_default', 0))
+        # Treble (Bottom Right) - ĐỔI VỊ TRÍ
+        self._create_treble_control(mic_controls_grid)
     
     def _create_volume_mic_control(self, parent):
         """Tạo COMP (Volume Mic) control với màu đỏ."""
         volume_mic_frame = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#F44336")
-        # SỬ DỤNG PADDING ĐỒNG ĐỀU VÀ NHỎ HƠN
-        volume_mic_frame.grid(row=1, column=0, sticky="nsew", padx=1, pady=1)
+        # THAY ĐỔI VỊ TRÍ GRID TỪ (1,0) SANG (0,0)
+        volume_mic_frame.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
         
         # Label ở trên
         comp_label = CTK.CTkLabel(
@@ -264,33 +138,46 @@ class VocalSection(BaseComponent):
         # Decrease button
         self.volume_mic_decrease_btn = CTK.CTkButton(
             volume_mic_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_volume_mic_instant(-1),
-            width=35,
+            width=40,
             height=26,
             fg_color="#D32F2F",
             hover_color="#C62828"
         )
         self.volume_mic_decrease_btn.pack(side="left", padx=2)
         
-        # COMP value display
+        # Mute Mic button (Ctrl+M)
+        self.mute_mic_btn = CTK.CTkButton(
+            volume_mic_inner,
+            text="M",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._toggle_mic_mute(),
+            width=30,
+            height=26,
+            fg_color="#E91E63",
+            hover_color="#C2185B"
+        )
+        self.mute_mic_btn.pack(side="left", padx=2)
+        
+        # COMP value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
         self.volume_mic_value_label = CTK.CTkLabel(
             volume_mic_inner,
             text="45",
             font=("Arial", 11, "bold"),
             text_color="#EF9A9A",
-            width=40
+            width=0  # Đặt width=0 để ẩn đi
         )
-        self.volume_mic_value_label.pack(side="left", padx=2)
+        # Không pack label này để nó không hiển thị
         
         # Increase button
         self.volume_mic_increase_btn = CTK.CTkButton(
             volume_mic_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
+            text="Tăng",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_volume_mic_instant(1),
-            width=35,
+            width=40,
             height=26,
             fg_color="#D32F2F",
             hover_color="#C62828"
@@ -308,8 +195,8 @@ class VocalSection(BaseComponent):
     def _create_reverb_control(self, parent):
         """Tạo Reverb control với màu cyan."""
         reverb_mic_frame = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#00BCD4")
-        # SỬ DỤNG PADDING ĐỒNG ĐỀU VÀ NHỎ HƠN
-        reverb_mic_frame.grid(row=1, column=1, sticky="nsew", padx=1, pady=1)
+        # THAY ĐỔI VỊ TRÍ GRID TỪ (1,1) SANG (0,1)
+        reverb_mic_frame.grid(row=0, column=1, sticky="nsew", padx=1, pady=1)
         
         # Label ở trên
         reverb_label = CTK.CTkLabel(
@@ -327,33 +214,33 @@ class VocalSection(BaseComponent):
         # Decrease button
         self.reverb_mic_decrease_btn = CTK.CTkButton(
             reverb_mic_inner,
-            text="-",
-            font=("Arial", 12, "bold"),
+            text="Giảm",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_reverb_mic_instant(-1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#0097A7",
             hover_color="#00838F"
         )
         self.reverb_mic_decrease_btn.pack(side="left", padx=2)
         
-        # Reverb value display
+        # Reverb value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
         self.reverb_mic_value_label = CTK.CTkLabel(
             reverb_mic_inner,
             text="36",
             font=("Arial", 11, "bold"),
             text_color="#80DEEA",
-            width=40
+            width=0  # Đặt width=0 để ẩn đi
         )
-        self.reverb_mic_value_label.pack(side="left", padx=2)
+        # Không pack label này để nó không hiển thị
         
         # Increase button
         self.reverb_mic_increase_btn = CTK.CTkButton(
             reverb_mic_inner,
-            text="+",
-            font=("Arial", 12, "bold"),
+            text="Tăng",
+            font=("Arial", 10, "bold"),
             command=lambda: self._adjust_reverb_mic_instant(1),
-            width=35,
+            width=50,
             height=26,
             fg_color="#0097A7",
             hover_color="#00838F"
@@ -367,6 +254,132 @@ class VocalSection(BaseComponent):
             to=self.default_values.get('reverb_max', 42)
         )
         self.reverb_mic_slider.set(self.default_values.get('reverb_default', 36))
+    
+    def _create_bass_control(self, parent):
+        """Tạo Bass control với màu cam."""
+        bass_frame = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#FF9800")
+        # THAY ĐỔI VỊ TRÍ GRID TỪ (0,0) SANG (1,0)
+        bass_frame.grid(row=1, column=0, sticky="nsew", padx=1, pady=1)
+        
+        # Label ở trên
+        bass_label = CTK.CTkLabel(
+            bass_frame,
+            text="Bass",
+            font=("Arial", 11, "bold"),
+            text_color="#FFB74D"
+        )
+        bass_label.pack(pady=(4, 1))
+        
+        # Buttons ở dưới
+        bass_inner = CTK.CTkFrame(bass_frame, fg_color="transparent")
+        bass_inner.pack(pady=(1, 4))
+        
+        # Decrease button
+        self.bass_decrease_btn = CTK.CTkButton(
+            bass_inner,
+            text="Giảm",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._adjust_bass_instant(-1),
+            width=50,
+            height=26,
+            fg_color="#F57C00",
+            hover_color="#E65100"
+        )
+        self.bass_decrease_btn.pack(side="left", padx=2)
+        
+        # Bass value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
+        self.bass_value_label = CTK.CTkLabel(
+            bass_inner,
+            text="0",
+            font=("Arial", 11, "bold"),
+            text_color="#FFB74D",
+            width=0  # Đặt width=0 để ẩn đi
+        )
+        # Không pack label này để nó không hiển thị
+        
+        # Increase button
+        self.bass_increase_btn = CTK.CTkButton(
+            bass_inner,
+            text="Tăng",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._adjust_bass_instant(1),
+            width=50,
+            height=26,
+            fg_color="#F57C00",
+            hover_color="#E65100"
+        )
+        self.bass_increase_btn.pack(side="left", padx=2)
+        
+        # Hidden slider for internal state
+        self.bass_slider = CTK.CTkSlider(bass_frame, width=0, height=0)
+        self.bass_slider.configure(
+            from_=self.default_values.get('bass_min', -30),
+            to=self.default_values.get('bass_max', 30)
+        )
+        self.bass_slider.set(self.default_values.get('bass_default', 0))
+    
+    def _create_treble_control(self, parent):
+        """Tạo Treble control với màu xanh lá."""
+        treble_frame = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#4CAF50")
+        # THAY ĐỔI VỊ TRÍ GRID TỪ (0,1) SANG (1,1)
+        treble_frame.grid(row=1, column=1, sticky="nsew", padx=1, pady=1)
+        
+        # Label ở trên
+        treble_label = CTK.CTkLabel(
+            treble_frame,
+            text="Treble",
+            font=("Arial", 11, "bold"),
+            text_color="#81C784"
+        )
+        treble_label.pack(pady=(4, 1))
+        
+        # Buttons ở dưới
+        treble_inner = CTK.CTkFrame(treble_frame, fg_color="transparent")
+        treble_inner.pack(pady=(1, 4))
+        
+        # Decrease button
+        self.treble_decrease_btn = CTK.CTkButton(
+            treble_inner,
+            text="Giảm",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._adjust_treble_instant(-1),
+            width=50,
+            height=26,
+            fg_color="#388E3C",
+            hover_color="#2E7D32"
+        )
+        self.treble_decrease_btn.pack(side="left", padx=2)
+        
+        # Treble value display (ẩn đi nhưng vẫn giữ lại để tránh lỗi)
+        self.treble_value_label = CTK.CTkLabel(
+            treble_inner,
+            text="0",
+            font=("Arial", 11, "bold"),
+            text_color="#81C784",
+            width=0  # Đặt width=0 để ẩn đi
+        )
+        # Không pack label này để nó không hiển thị
+        
+        # Increase button
+        self.treble_increase_btn = CTK.CTkButton(
+            treble_inner,
+            text="Tăng",
+            font=("Arial", 10, "bold"),
+            command=lambda: self._adjust_treble_instant(1),
+            width=50,
+            height=26,
+            fg_color="#388E3C",
+            hover_color="#2E7D32"
+        )
+        self.treble_increase_btn.pack(side="left", padx=2)
+        
+        # Hidden slider for internal state
+        self.treble_slider = CTK.CTkSlider(treble_frame, width=0, height=0)
+        self.treble_slider.configure(
+            from_=self.default_values.get('treble_min', -20),
+            to=self.default_values.get('treble_max', 30)
+        )
+        self.treble_slider.set(self.default_values.get('treble_default', 0))
     
     # ==================== EVENT HANDLERS ====================
     
@@ -385,3 +398,7 @@ class VocalSection(BaseComponent):
     def _adjust_reverb_mic_instant(self, direction):
         """Điều chỉnh Reverb ngay lập tức."""
         self.main_window._adjust_reverb_mic_instant(direction)
+    
+    def _toggle_mic_mute(self):
+        """Toggle mute mic (Ctrl+M) trong Cubase."""
+        self.main_window._toggle_mic_mute()

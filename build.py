@@ -136,24 +136,17 @@ nhac_tre:+2:45:35:30:40"""
         config_dir = self.dist_dir / "config"
         config_dir.mkdir(exist_ok=True)
         
-        # Copy hoặc tạo các file config
-        config_templates = self.create_default_config_files()
-        
+        # Copy các file config từ project
         for config_file in self.config_files:
             source_path = self.project_dir / config_file
             target_path = config_dir / config_file
             
             if source_path.exists():
-                # Copy existing config file
+                # Copy existing config file from project
                 shutil.copy2(source_path, target_path)
                 print(f"   Copied: {config_file}")
             else:
-                # Create default config file
-                if config_file in config_templates:
-                    target_path.write_text(config_templates[config_file], encoding='utf-8')
-                    print(f"   Created: {config_file} (default)")
-                else:
-                    print(f"   ⚠️  Skipped: {config_file} (no template)")
+                print(f"   ⚠️  Not found: {config_file}")
         
         return True
     
@@ -175,36 +168,7 @@ nhac_tre:+2:45:35:30:40"""
             else:
                 print(f"   ⚠️  Not found: {dir_name}")
     
-    def create_readme(self):
-        """Tạo file README cho người dùng"""
-        print("📄 Creating user README...")
-        
-        readme_content = """# Cubase Auto Tools
 
-## Cách sử dụng:
-1. Chạy file CubaseAutoTools.exe
-2. Các file cấu hình nằm trong thư mục config/:
-   - settings.json: Cài đặt giao diện và chế độ tự động
-   - default_values.txt: Giá trị mặc định cho các control
-   - music_presets.txt: Template cho nhạc Bolero và Nhạc trẻ
-
-## Chỉnh sửa cấu hình:
-- Bạn có thể edit các file trong thư mục config/ để tùy chỉnh
-- Khởi động lại ứng dụng sau khi chỉnh sửa
-
-## Yêu cầu hệ thống:
-- Windows 10 trở lên
-- Tesseract OCR đã cài đặt (nếu sử dụng tính năng OCR)
-- Cubase phải được mở và có plugin AUTO-TUNE PRO
-
-## Liên hệ hỗ trợ:
-- Studio: KT STUDIO  
-- Phone: 0948999892
-"""
-        
-        readme_path = self.dist_dir / "README.txt"
-        readme_path.write_text(readme_content, encoding='utf-8')
-        print(f"   Created: README.txt")
     
     def build_all(self):
         """Build toàn bộ project"""
@@ -227,10 +191,6 @@ nhac_tre:+2:45:35:30:40"""
             
             # Step 4: Copy directories
             self.copy_required_directories()
-            print()
-            
-            # Step 5: Create README
-            self.create_readme()
             print()
             
             print("✅ Build completed successfully!")

@@ -973,8 +973,7 @@ class MainWindow:
             traceback.print_exc()
         finally:
             self.resume_auto_detect_after_manual_action()
-            # Không minimize plugins để user có thể thấy kết quả
-            # self._minimize_plugins_after_action()
+            self._minimize_plugins_after_action()
 
     # ==================== PLUGIN TOGGLE ====================
 

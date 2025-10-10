@@ -22,13 +22,15 @@ class AutoTuneSection(BaseComponent):
         self.bolero_container = None
         self.bolero_level_label = None
         self.bolero_minus_btn = None
+        self.bolero_normal_btn = None
         self.bolero_plus_btn = None
-        self.bolero_apply_circle = None
+        self.bolero_title_label = None
         self.nhac_tre_container = None
         self.nhac_tre_level_label = None
         self.nhac_tre_minus_btn = None
+        self.nhac_tre_normal_btn = None
         self.nhac_tre_plus_btn = None
-        self.nhac_tre_apply_circle = None
+        self.nhac_tre_title_label = None
         
         # Track which preset is currently active
         self.active_music_preset = None
@@ -186,20 +188,14 @@ class AutoTuneSection(BaseComponent):
         header_frame = CTK.CTkFrame(container, fg_color="transparent")
         header_frame.pack(pady=(4, 2), padx=6, fill="x")
         
-        # Nút apply preset với tên preset (bên trái)
-        apply_circle = CTK.CTkButton(
+        # Title text instead of button (bên trái)
+        title_label = CTK.CTkLabel(
             header_frame,
             text=preset_name,
             font=("Arial", 11, "bold"),
-            command=lambda: self._apply_preset_on_click(music_type),
-            width=70,
-            height=26,
-            corner_radius=6,
-            fg_color="#303F9F",
-            hover_color="#283593",
-            border_width=0
+            text_color="#FFFFFF"
         )
-        apply_circle.pack(side="left")
+        title_label.pack(side="left")
         
         # Level display (bên phải)
         level_label = CTK.CTkLabel(
@@ -254,16 +250,16 @@ class AutoTuneSection(BaseComponent):
         )
         plus_btn.pack(side="left")
         
-        return container, level_label, minus_btn, normal_btn, plus_btn, apply_circle
+        return container, level_label, minus_btn, normal_btn, plus_btn, title_label
     
     def _create_bolero_preset(self, parent):
         """Tạo Bolero preset controls với màu hồng."""
-        self.bolero_container, self.bolero_level_label, self.bolero_minus_btn, self.bolero_normal_btn, self.bolero_plus_btn, self.bolero_apply_circle = self._create_preset_base(
-            parent, "Bolero", "#E91E63", "bolero")
+        self.bolero_container, self.bolero_level_label, self.bolero_minus_btn, self.bolero_normal_btn, self.bolero_plus_btn, self.bolero_title_label = self._create_preset_base(
+            parent, "Bolero", "#3F51B5", "bolero")
     
     def _create_nhac_tre_preset(self, parent):
         """Tạo Nhạc Trẻ preset controls với màu xanh tím/indigo."""
-        self.nhac_tre_container, self.nhac_tre_level_label, self.nhac_tre_minus_btn, self.nhac_tre_normal_btn, self.nhac_tre_plus_btn, self.nhac_tre_apply_circle = self._create_preset_base(
+        self.nhac_tre_container, self.nhac_tre_level_label, self.nhac_tre_minus_btn, self.nhac_tre_normal_btn, self.nhac_tre_plus_btn, self.nhac_tre_title_label = self._create_preset_base(
             parent, "Nhạc Trẻ", "#3F51B5", "nhac_tre")
     
     # ==================== EVENT HANDLERS ====================
@@ -276,7 +272,10 @@ class AutoTuneSection(BaseComponent):
         self._update_music_preset_display(music_type)
         
         # 3. Áp dụng preset ở level 0 (level "Bình thường")
-        self._apply_preset_on_click(music_type)
+        # Sửa lỗi: gọi trực tiếp _apply_music_preset thay vì _apply_preset_on_click
+        # để tránh việc bị skip do preset đã active
+        self._highlight_active_preset(music_type)
+        self.main_window._apply_music_preset(music_type)
     
     def _execute_tone_detector(self):
         """Execute tone detector."""
@@ -301,45 +300,42 @@ class AutoTuneSection(BaseComponent):
         self.active_music_preset = active_preset
         
         # Màu cho Bolero (hồng)
-        bolero_default_border = "#E91E63"
+        bolero_default_border = "#3F51B5"
         bolero_active_border = "#F48FB1"  # Hồng sáng
         bolero_default_btn = "#303F9F"
         bolero_active_btn = "#F48FB1"
         
         # Màu cho Nhạc Trẻ (xanh tím/indigo)
         nhac_tre_default_border = "#3F51B5"
-        nhac_tre_active_border = "#7986CB"  # Xanh tím sáng
+        nhac_tre_active_border = "#F48FB1"  # Xanh tím sáng
         nhac_tre_default_btn = "#303F9F"
-        nhac_tre_active_btn = "#7986CB"
+        nhac_tre_active_btn = "#F48FB1"
         
+        # Reset cả hai về màu default trước
+        if self.bolero_container:
+            self.bolero_container.configure(border_color=bolero_default_border)
+        if self.bolero_normal_btn:
+            self.bolero_normal_btn.configure(fg_color=bolero_default_btn)
+        if self.nhac_tre_container:
+            self.nhac_tre_container.configure(border_color=nhac_tre_default_border)
+        if self.nhac_tre_normal_btn:
+            self.nhac_tre_normal_btn.configure(fg_color=nhac_tre_default_btn)
+        
+        # Highlight preset đang active
         if active_preset == 'bolero':
             if self.bolero_container:
                 self.bolero_container.configure(border_color=bolero_active_border)
-            if self.bolero_apply_circle:
-                self.bolero_apply_circle.configure(fg_color=bolero_active_btn)
-            if self.nhac_tre_container:
-                self.nhac_tre_container.configure(border_color=nhac_tre_default_border)
-            if self.nhac_tre_apply_circle:
-                self.nhac_tre_apply_circle.configure(fg_color=nhac_tre_default_btn)
+            # Nếu level là 0, highlight nút "Bình thường"
+            current_level = self.main_window.music_presets_manager.get_current_level('bolero')
+            if current_level == 0 and self.bolero_normal_btn:
+                self.bolero_normal_btn.configure(fg_color=bolero_active_btn)
         elif active_preset == 'nhac_tre':
-            if self.bolero_container:
-                self.bolero_container.configure(border_color=bolero_default_border)
-            if self.bolero_apply_circle:
-                self.bolero_apply_circle.configure(fg_color=bolero_default_btn)
             if self.nhac_tre_container:
                 self.nhac_tre_container.configure(border_color=nhac_tre_active_border)
-            if self.nhac_tre_apply_circle:
-                self.nhac_tre_apply_circle.configure(fg_color=nhac_tre_active_btn)
-        else:
-            # Reset cả hai về màu default
-            if self.bolero_container:
-                self.bolero_container.configure(border_color=bolero_default_border)
-            if self.bolero_apply_circle:
-                self.bolero_apply_circle.configure(fg_color=bolero_default_btn)
-            if self.nhac_tre_container:
-                self.nhac_tre_container.configure(border_color=nhac_tre_default_border)
-            if self.nhac_tre_apply_circle:
-                self.nhac_tre_apply_circle.configure(fg_color=nhac_tre_default_btn)
+            # Nếu level là 0, highlight nút "Bình thường"
+            current_level = self.main_window.music_presets_manager.get_current_level('nhac_tre')
+            if current_level == 0 and self.nhac_tre_normal_btn:
+                self.nhac_tre_normal_btn.configure(fg_color=nhac_tre_active_btn)
     
     def _adjust_and_apply_preset(self, music_type, direction):
         """Điều chỉnh và tự động apply preset ngay lập tức."""
@@ -383,4 +379,3 @@ class AutoTuneSection(BaseComponent):
         """Cập nhật hiển thị tone hiện tại."""
         if self.current_tone_label:
             self.current_tone_label.configure(text=tone_text)
-            

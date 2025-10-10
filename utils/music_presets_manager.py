@@ -189,19 +189,23 @@ nhac_tre:+2:45:35:30:40"""
             success_count, total_count = ultra_processor.execute_ultra_fast_batch(parameters_list)
             
             # Update UI sliders instantly - chỉ cập nhật Return Speed và Flex Tune
+            # Sửa lỗi: Truy cập sliders qua autotune_section thay vì trực tiếp từ gui_instance
             try:
-                gui_instance.return_speed_slider.set(preset_values['return_speed'])
-                gui_instance._on_return_speed_slider_change(preset_values['return_speed'])
-                
-                gui_instance.flex_tune_slider.set(preset_values['flex_tune'])
-                gui_instance._on_flex_tune_slider_change(preset_values['flex_tune'])
+                # Kiểm tra xem autotune_section có tồn tại không
+                if hasattr(gui_instance, 'autotune_section') and gui_instance.autotune_section:
+                    # Kiểm tra xem các sliders có tồn tại không
+                    if hasattr(gui_instance.autotune_section, 'return_speed_slider') and gui_instance.autotune_section.return_speed_slider:
+                        gui_instance.autotune_section.return_speed_slider.set(preset_values['return_speed'])
+                    
+                    if hasattr(gui_instance.autotune_section, 'flex_tune_slider') and gui_instance.autotune_section.flex_tune_slider:
+                        gui_instance.autotune_section.flex_tune_slider.set(preset_values['flex_tune'])
                 
                 # Các cập nhật UI khác được giữ lại trong code nhưng không thực thi
-                # gui_instance.natural_vibrato_slider.set(preset_values['natural_vibrato'])
-                # gui_instance._on_natural_vibrato_slider_change(preset_values['natural_vibrato'])
+                # if hasattr(gui_instance.autotune_section, 'natural_vibrato_slider') and gui_instance.autotune_section.natural_vibrato_slider:
+                #     gui_instance.autotune_section.natural_vibrato_slider.set(preset_values['natural_vibrato'])
                 
-                # gui_instance.humanize_slider.set(preset_values['humanize'])
-                # gui_instance._on_humanize_slider_change(preset_values['humanize'])
+                # if hasattr(gui_instance.autotune_section, 'humanize_slider') and gui_instance.autotune_section.humanize_slider:
+                #     gui_instance.autotune_section.humanize_slider.set(preset_values['humanize'])
                 
             except Exception as e:
                 print(f"⚠️ UI update error: {e}")

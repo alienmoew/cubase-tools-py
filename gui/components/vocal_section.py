@@ -3,6 +3,7 @@ Vocal/Mic Section Component - Bass, Treble, COMP, Reverb controls.
 """
 import customtkinter as CTK
 from gui.components.base_component import BaseComponent
+import time
 
 
 class VocalSection(BaseComponent):
@@ -10,6 +11,9 @@ class VocalSection(BaseComponent):
     
     def __init__(self, parent, main_window):
         super().__init__(parent, main_window)
+        
+        # Cooldown tracking (3 seconds per button)
+        self.button_cooldowns = {}
         
         # UI element references
         self.proq3_bypass_toggle = None
@@ -151,7 +155,7 @@ class VocalSection(BaseComponent):
         # Mute Mic button (Ctrl+M)
         self.mute_mic_btn = CTK.CTkButton(
             volume_mic_inner,
-            text="M",
+            text="Tắt mic",
             font=("Arial", 10, "bold"),
             command=lambda: self._toggle_mic_mute(),
             width=30,
@@ -383,22 +387,73 @@ class VocalSection(BaseComponent):
     
     # ==================== EVENT HANDLERS ====================
     
+    def _check_cooldown(self, button_name):
+        """Kiểm tra xem nút có đang trong cooldown không."""
+        current_time = time.time()
+        if button_name in self.button_cooldowns:
+            if current_time - self.button_cooldowns[button_name] < 3.0:
+                return False  # Vẫn trong cooldown
+        return True  # Có thể bấm
+    
+    def _set_cooldown(self, button_name, button_widget):
+        """Đặt cooldown cho nút và disable trong 3 giây."""
+        self.button_cooldowns[button_name] = time.time()
+        button_widget.configure(state="disabled")
+        
+        # Re-enable sau 3 giây
+        self.parent.after(3000, lambda: button_widget.configure(state="normal"))
+    
     def _adjust_bass_instant(self, direction):
         """Điều chỉnh Bass ngay lập tức."""
+        button_name = f"bass_{direction}"
+        button_widget = self.bass_decrease_btn if direction < 0 else self.bass_increase_btn
+        
+        if not self._check_cooldown(button_name):
+            return
+        
+        self._set_cooldown(button_name, button_widget)
         self.main_window._adjust_bass_instant(direction)
     
     def _adjust_treble_instant(self, direction):
         """Điều chỉnh Treble ngay lập tức."""
+        button_name = f"treble_{direction}"
+        button_widget = self.treble_decrease_btn if direction < 0 else self.treble_increase_btn
+        
+        if not self._check_cooldown(button_name):
+            return
+        
+        self._set_cooldown(button_name, button_widget)
         self.main_window._adjust_treble_instant(direction)
     
     def _adjust_volume_mic_instant(self, direction):
         """Điều chỉnh COMP ngay lập tức."""
+        button_name = f"volume_mic_{direction}"
+        button_widget = self.volume_mic_decrease_btn if direction < 0 else self.volume_mic_increase_btn
+        
+        if not self._check_cooldown(button_name):
+            return
+        
+        self._set_cooldown(button_name, button_widget)
         self.main_window._adjust_volume_mic_instant(direction)
     
     def _adjust_reverb_mic_instant(self, direction):
         """Điều chỉnh Reverb ngay lập tức."""
+        button_name = f"reverb_mic_{direction}"
+        button_widget = self.reverb_mic_decrease_btn if direction < 0 else self.reverb_mic_increase_btn
+        
+        if not self._check_cooldown(button_name):
+            return
+        
+        self._set_cooldown(button_name, button_widget)
         self.main_window._adjust_reverb_mic_instant(direction)
     
     def _toggle_mic_mute(self):
         """Toggle mute mic (Ctrl+M) trong Cubase."""
+        button_name = "mute_mic"
+        
+        if not self._check_cooldown(button_name):
+            return
+        
+        self._set_cooldown(button_name, self.mute_mic_btn)
         self.main_window._toggle_mic_mute()
+        

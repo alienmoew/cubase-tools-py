@@ -126,313 +126,92 @@ class Footer(BaseComponent):
         except Exception as e:
             print(f"❌ Error resetting SoundShifter: {e}")
     
+    # Thay thế hàm _batch_reset_vocal_parameters trong file footer.py
+
     def _batch_reset_vocal_parameters(self):
-        """Ultra fast batch reset tất cả vocal parameters (Volume Mic, Reverb, Bass, Treble)."""
+        """
+        Reset tất cả vocal parameters (Volume Mic, Reverb, Bass, Treble) 
+        ULTRA OPTIMIZED: Chỉ screenshot và template matching MỘT LẦN cho tất cả controls.
+        """
+        # Lưu vị trí chuột ban đầu ngay từ đầu
+        import pyautogui
+        original_pos = pyautogui.position()
+        
         try:
-            print("⚡ Ultra fast batch reset vocal parameters starting...")
+            print("⚡⚡⚡ ULTRA OPTIMIZED batch reset vocal parameters starting...")
             
-            # Lấy giá trị mặc định từ file config
-            default_values = self.main_window.default_values
-            
-            # Tìm cửa sổ XVox một lần duy nhất
-            from utils.window_manager import WindowManager
-            import pygetwindow as gw
-            
-            # Try different possible window titles for XVox
-            possible_titles = ["Xvox", "XVOX", "xvox", "X-Vox", "X_Vox", "XVox", "X Vox"]
-            xvox_win = None
-            
-            for title in possible_titles:
-                xvox_win = WindowManager.find_window(title)
-                if xvox_win:
-                    print(f"✅ Found XVox window: {title}")
-                    break
-            
-            if not xvox_win:
-                print("❌ XVox plugin window not found")
+            # --- BƯỚC 1: Tìm và focus window CHỈ MỘT LẦN ---
+            print("🔍 Finding Cubase and XVox windows (once)...")
+            proc = self.main_window.xvox_detector._find_cubase_process()
+            if not proc:
+                print("❌ Cubase process not found")
+                return False
+                
+            if not self.main_window.xvox_detector._focus_cubase_window(proc):
+                print("❌ Cannot focus Cubase window")
                 return False
             
-            # Focus XVox window
-            xvox_win.activate()
+            plugin_win = self.main_window.xvox_detector._find_xvox_window()
+            if not plugin_win:
+                print("❌ XVox window not found")
+                return False
+            
+            plugin_win.activate()
             import time
-            time.sleep(0.1)  # Giảm từ 0.3 xuống 0.1
+            time.sleep(0.1)
+            print("✅ XVox window focused (once)")
             
-            # Lấy thông tin cửa sổ XVox
-            x, y, w, h = xvox_win.left, xvox_win.top, xvox_win.width, xvox_win.height
-            print(f"📐 XVox window: {x}, {y}, {w}x{h}")
-            
-            # Screenshot toàn bộ cửa sổ XVox một lần
-            import pyautogui
-            import cv2
-            import numpy as np
-            from PIL import Image
-            
-            screenshot = pyautogui.screenshot(region=(x, y, w, h))
-            screenshot_np = np.array(screenshot)
-            screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2GRAY)
-            
-            # Chuẩn bị các giá trị mặc định
+            # --- BƯỚC 2: Lấy giá trị mặc định ---
+            default_values = self.main_window.default_values
             xvox_volume_default = default_values.get('xvox_volume_default', 40)
             reverb_default = default_values.get('reverb_default', 36)
             bass_default = default_values.get('bass_default', -10)
             treble_default = default_values.get('treble_default', 20)
             
-            # Reset Volume Mic (COMP)
-            print(f"🔄 Resetting Volume Mic to {xvox_volume_default}...")
-            try:
-                # Load template
-                comp_template = cv2.imread(config.TEMPLATE_PATHS['comp_template'], cv2.IMREAD_GRAYSCALE)
-                if comp_template is None:
-                    print(f"❌ Cannot load COMP template")
-                    return False
-                
-                # Template matching
-                from utils.helpers import TemplateHelper
-                best_result = TemplateHelper.adaptive_template_match(screenshot_gray, comp_template)
-                
-                if best_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
-                    print(f"❌ COMP template confidence too low: {best_result['confidence']:.3f}")
-                    return False
-                
-                # Tính toán vị trí click
-                scaled_w, scaled_h = best_result['template_size']
-                click_x = x + best_result['location'][0] + scaled_w // 2
-                click_y = y + best_result['location'][1] + scaled_h // 2
-                
-                # Thực hiện click và nhập giá trị - GIẢM DELAY
-                pyautogui.click(click_x, click_y)
-                time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                time.sleep(0.1)  # Giảm từ 0.5 xuống 0.1
-                
-                estimated_template_height = 100
-                template_top_y = click_y - (estimated_template_height // 2)
-                top_click_y = template_top_y - 15
-                pyautogui.doubleClick(click_x, top_click_y)
-                time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                
-                pyautogui.typewrite(str(xvox_volume_default))
-                time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                pyautogui.press('enter')
-                time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                
-                print(f"✅ Volume Mic reset to {xvox_volume_default}")
-                
-                # Update UI
-                if self.main_window.vocal_section and self.main_window.vocal_section.volume_mic_slider:
-                    self.main_window.vocal_section.volume_mic_slider.set(xvox_volume_default)
-                    self.main_window.vocal_section.volume_mic_value_label.configure(text=str(xvox_volume_default))
-            except Exception as e:
-                print(f"❌ Failed to reset Volume Mic: {e}")
+            # --- BƯỚC 3: ULTRA OPTIMIZED - Gọi hàm batch reset tất cả cùng lúc ---
+            print("⚡ Calling ultra optimized batch reset (1 screenshot, 1 OCR/CV)...")
+            success = self.main_window.xvox_detector.batch_reset_all_xvox_parameters(
+                plugin_win, 
+                xvox_volume_default, 
+                reverb_default, 
+                bass_default, 
+                treble_default
+            )
             
-            # Reset Reverb
-            print(f"🔄 Resetting Reverb to {reverb_default}...")
-            try:
-                # Load template
-                reverb_template = cv2.imread(config.TEMPLATE_PATHS['reverb_template'], cv2.IMREAD_GRAYSCALE)
-                if reverb_template is None:
-                    print(f"❌ Cannot load Reverb template")
-                    return False
-                
-                # Template matching
-                best_result = TemplateHelper.adaptive_template_match(screenshot_gray, reverb_template)
-                
-                if best_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
-                    print(f"❌ Reverb template confidence too low: {best_result['confidence']:.3f}")
-                    return False
-                
-                # Tính toán vị trí click
-                scaled_w, scaled_h = best_result['template_size']
-                click_x = x + best_result['location'][0] + scaled_w // 2
-                click_y = y + best_result['location'][1] + scaled_h // 2
-                
-                # Thực hiện click và nhập giá trị - GIẢM DELAY
-                pyautogui.click(click_x, click_y)
-                time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                time.sleep(0.1)  # Giảm từ 0.5 xuống 0.1
-                
-                estimated_template_height = 100
-                template_top_y = click_y - (estimated_template_height // 2)
-                top_click_y = template_top_y - 15
-                pyautogui.doubleClick(click_x, top_click_y)
-                time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                
-                pyautogui.typewrite(str(reverb_default))
-                time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                pyautogui.press('enter')
-                time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                
-                print(f"✅ Reverb reset to {reverb_default}")
-                
-                # Update UI
-                if self.main_window.vocal_section and self.main_window.vocal_section.reverb_mic_slider:
-                    self.main_window.vocal_section.reverb_mic_slider.set(reverb_default)
-                    self.main_window.vocal_section.reverb_mic_value_label.configure(text=str(reverb_default))
-            except Exception as e:
-                print(f"❌ Failed to reset Reverb: {e}")
-            
-            # Reset Bass và Treble bằng OCR một lần
-            print(f"🔄 Resetting Bass to {bass_default} and Treble to {treble_default}...")
-            try:
-                # Load template
-                tone_mic_template = cv2.imread(config.TEMPLATE_PATHS['tone_mic_template'], cv2.IMREAD_GRAYSCALE)
-                if tone_mic_template is None:
-                    print(f"❌ Cannot load tone mic template")
-                    return False
-                
-                # Template matching
-                best_result = TemplateHelper.adaptive_template_match(screenshot_gray, tone_mic_template)
-                
-                if best_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
-                    print(f"❌ Tone mic template confidence too low: {best_result['confidence']:.3f}")
-                    return False
-                
-                # Template match coordinates
-                match_x, match_y = best_result['location']
-                scaled_w, scaled_h = best_result['template_size']
-                
-                # Define OCR region
-                ocr_x, ocr_y = match_x, match_y
-                ocr_w, ocr_h = scaled_w, scaled_h
-                
-                # Direct capture OCR region
-                absolute_ocr_x = x + ocr_x
-                absolute_ocr_y = y + ocr_y
-                ocr_region_pil = pyautogui.screenshot(region=(absolute_ocr_x, absolute_ocr_y, ocr_w, ocr_h))
-                
-                # Convert OCR region to grayscale
-                ocr_region_np = np.array(ocr_region_pil)
-                ocr_region_gray = cv2.cvtColor(ocr_region_np, cv2.COLOR_RGB2GRAY)
-                
-                # Convert back to PIL for OCR
-                ocr_region_gray_pil = Image.fromarray(ocr_region_gray, mode='L')
-                
-                # OCR
-                from utils.helpers import OCRHelper
-                ocr_data = OCRHelper.extract_text_data(ocr_region_gray_pil)
-                words = OCRHelper.get_text_words(ocr_data)
-                print(f"📜 OCR text in tone mic region: {words}")
-                
-                # Tìm vị trí LOW và HIGH
-                low_pos = None
-                high_pos = None
-                low_index = -1
-                
-                # Tìm vị trí LOW
-                for i, text in enumerate(ocr_data["text"]):
-                    if text and text.strip():
-                        text_clean = text.strip().upper()
-                        
-                        if "LOW" in text_clean:
-                            # Tính vị trí absolute của LOW
-                            low_x = x + ocr_x + ocr_data["left"][i] + ocr_data["width"][i] // 2
-                            low_y = y + ocr_y + ocr_data["top"][i] + ocr_data["height"][i] // 2
-                            low_pos = (low_x, low_y)
-                            low_index = i
-                            print(f"🔉 Found LOW at index {i}: ({low_x}, {low_y})")
-                            break
-                
-                # Tìm vị trí HIGH
-                # Thử tìm trực tiếp từ OCR
-                for i, text in enumerate(ocr_data["text"]):
-                    if text and text.strip():
-                        text_clean = text.strip().upper()
-                        
-                        if "HIGH" in text_clean:
-                            # Tính vị trí absolute của HIGH
-                            high_x = x + ocr_x + ocr_data["left"][i] + ocr_data["width"][i] // 2
-                            high_y = y + ocr_y + ocr_data["top"][i] + ocr_data["height"][i] // 2
-                            high_pos = (high_x, high_y)
-                            print(f"🔊 Found HIGH at index {i}: ({high_x}, {high_y})")
-                            break
-                
-                # Nếu không tìm thấy HIGH, sử dụng vị trí cách LOW hai đơn vị
-                if not high_pos and low_index >= 0:
-                    high_index = low_index + 2
+            if success:
+                # Update UI for all controls
+                if self.main_window.vocal_section:
+                    if self.main_window.vocal_section.volume_mic_slider:
+                        self.main_window.vocal_section.volume_mic_slider.set(xvox_volume_default)
+                        self.main_window.vocal_section.volume_mic_value_label.configure(text=str(xvox_volume_default))
                     
-                    # Kiểm tra xem index có hợp lệ không
-                    if high_index < len(ocr_data["text"]):
-                        high_text = ocr_data["text"][high_index]
-                        if high_text and high_text.strip():
-                            # Tính vị trí absolute của HIGH
-                            high_x = x + ocr_x + ocr_data["left"][high_index] + ocr_data["width"][high_index] // 2
-                            high_y = y + ocr_y + ocr_data["top"][high_index] + ocr_data["height"][high_index] // 2
-                            high_pos = (high_x, high_y)
-                            print(f"🔊 Found HIGH at index {high_index} (text: '{high_text}'): ({high_x}, {high_y})")
-                
-                # Reset Bass - GIẢM DELAY
-                if low_pos:
-                    # Click vào LOW text
-                    pyautogui.click(low_pos[0], low_pos[1])
-                    time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
+                    if self.main_window.vocal_section.reverb_mic_slider:
+                        self.main_window.vocal_section.reverb_mic_slider.set(reverb_default)
+                        self.main_window.vocal_section.reverb_mic_value_label.configure(text=str(reverb_default))
                     
-                    # Click ở vị trí chiều dọc 35% từ trên xuống
-                    template_top = match_y
-                    template_height = scaled_h
-                    
-                    click_y = y + template_top + (template_height * 0.35)
-                    click_x = low_pos[0]
-                    
-                    pyautogui.click(click_x, click_y)
-                    time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                    
-                    # Select text and input value
-                    pyautogui.tripleClick(click_x, click_y)
-                    time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                    
-                    pyautogui.typewrite(str(bass_default))
-                    time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                    pyautogui.press('enter')
-                    time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                    
-                    print(f"✅ Bass reset to {bass_default}")
-                    
-                    # Update UI
-                    if self.main_window.vocal_section and self.main_window.vocal_section.bass_slider:
+                    if self.main_window.vocal_section.bass_slider:
                         self.main_window.vocal_section.bass_slider.set(bass_default)
                         self.main_window.vocal_section.bass_value_label.configure(text=str(bass_default))
-                
-                # Reset Treble - GIẢM DELAY
-                if high_pos:
-                    # Click vào HIGH text
-                    pyautogui.click(high_pos[0], high_pos[1])
-                    time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
                     
-                    # Click ở vị trí chiều dọc 35% từ trên xuống
-                    template_top = match_y
-                    template_height = scaled_h
-                    
-                    click_y = y + template_top + (template_height * 0.35)
-                    click_x = high_pos[0]
-                    
-                    pyautogui.click(click_x, click_y)
-                    time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                    
-                    # Select text and input value
-                    pyautogui.tripleClick(click_x, click_y)
-                    time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                    
-                    pyautogui.typewrite(str(treble_default))
-                    time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
-                    pyautogui.press('enter')
-                    time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-                    
-                    print(f"✅ Treble reset to {treble_default}")
-                    
-                    # Update UI
-                    if self.main_window.vocal_section and self.main_window.vocal_section.treble_slider:
+                    if self.main_window.vocal_section.treble_slider:
                         self.main_window.vocal_section.treble_slider.set(treble_default)
                         self.main_window.vocal_section.treble_value_label.configure(text=str(treble_default))
                 
-                print("✅ Bass and Treble reset completed")
-            except Exception as e:
-                print(f"❌ Failed to reset Bass and Treble: {e}")
+                print("✅✅✅ ULTRA OPTIMIZED batch reset vocal parameters completed successfully!")
+            else:
+                print("❌ ULTRA OPTIMIZED batch reset failed")
             
-            print("✅ Ultra fast batch reset vocal parameters completed")
-            return True
-            
+            return success
+                
         except Exception as e:
-            print(f"❌ Error in batch reset vocal parameters: {e}")
+            print(f"❌ Error in ULTRA OPTIMIZED batch reset vocal parameters: {e}")
+            import traceback
+            traceback.print_exc()
             return False
+        finally:
+            # Chỉ trả về vị trí chuột một lần duy nhất ở cuối cùng
+            pyautogui.moveTo(original_pos[0], original_pos[1])
+            print("🖱️ Mouse cursor returned to original position.")
     
     def _copy_phone(self, event):
         """Copy phone number to clipboard."""

@@ -15,6 +15,9 @@ class VocalSection(BaseComponent):
         # Cooldown tracking (3 seconds per button)
         self.button_cooldowns = {}
         
+        # <<< THAY ĐỔI: Thêm biến khóa hành động
+        self.is_action_in_progress = False
+        
         # UI element references
         self.proq3_bypass_toggle = None
         self.proq3_bypass_status_label = None
@@ -395,65 +398,96 @@ class VocalSection(BaseComponent):
                 return False  # Vẫn trong cooldown
         return True  # Có thể bấm
     
-    def _set_cooldown(self, button_name, button_widget):
-        """Đặt cooldown cho nút và disable trong 3 giây."""
-        self.button_cooldowns[button_name] = time.time()
-        button_widget.configure(state="disabled")
+    def _set_cooldown(self, group_name, button_widgets):
+        """Đặt cooldown cho một nhóm nút và disable tất cả chúng trong 3 giây."""
+        self.button_cooldowns[group_name] = time.time()
         
-        # Re-enable sau 3 giây
-        self.parent.after(3000, lambda: button_widget.configure(state="normal"))
+        # Disable tất cả các nút trong nhóm
+        for widget in button_widgets:
+            widget.configure(state="disabled")
+        
+        # <<< THAY ĐỔI: Tạo hàm riêng để re-enable và reset lock
+        def re_enable_buttons():
+            for widget in button_widgets:
+                widget.configure(state="normal")
+            self.is_action_in_progress = False # Reset khóa khi nút sẵn sàng lại
+
+        self.parent.after(3000, re_enable_buttons)
     
+    # <<< THAY ĐỔI: Cập nhật tất cả các hàm _adjust_..._instant
     def _adjust_bass_instant(self, direction):
         """Điều chỉnh Bass ngay lập tức."""
-        button_name = f"bass_{direction}"
-        button_widget = self.bass_decrease_btn if direction < 0 else self.bass_increase_btn
-        
-        if not self._check_cooldown(button_name):
+        if self.is_action_in_progress:
             return
         
-        self._set_cooldown(button_name, button_widget)
+        self.is_action_in_progress = True
+        
+        group_name = "bass"
+        if not self._check_cooldown(group_name):
+            # Nếu cooldown chưa hết, reset lock ngay lập tức để có thể thử lại sau
+            self.is_action_in_progress = False
+            return
+        
+        self._set_cooldown(group_name, [self.bass_decrease_btn, self.bass_increase_btn])
         self.main_window._adjust_bass_instant(direction)
-    
+
     def _adjust_treble_instant(self, direction):
         """Điều chỉnh Treble ngay lập tức."""
-        button_name = f"treble_{direction}"
-        button_widget = self.treble_decrease_btn if direction < 0 else self.treble_increase_btn
-        
-        if not self._check_cooldown(button_name):
+        if self.is_action_in_progress:
             return
+
+        self.is_action_in_progress = True
         
-        self._set_cooldown(button_name, button_widget)
+        group_name = "treble"
+        if not self._check_cooldown(group_name):
+            self.is_action_in_progress = False
+            return
+            
+        self._set_cooldown(group_name, [self.treble_decrease_btn, self.treble_increase_btn])
         self.main_window._adjust_treble_instant(direction)
-    
+
     def _adjust_volume_mic_instant(self, direction):
         """Điều chỉnh COMP ngay lập tức."""
-        button_name = f"volume_mic_{direction}"
-        button_widget = self.volume_mic_decrease_btn if direction < 0 else self.volume_mic_increase_btn
-        
-        if not self._check_cooldown(button_name):
+        if self.is_action_in_progress:
             return
+
+        self.is_action_in_progress = True
         
-        self._set_cooldown(button_name, button_widget)
+        group_name = "volume_mic"
+        if not self._check_cooldown(group_name):
+            self.is_action_in_progress = False
+            return
+
+        self._set_cooldown(group_name, [self.volume_mic_decrease_btn, self.volume_mic_increase_btn])
         self.main_window._adjust_volume_mic_instant(direction)
-    
+
     def _adjust_reverb_mic_instant(self, direction):
         """Điều chỉnh Reverb ngay lập tức."""
-        button_name = f"reverb_mic_{direction}"
-        button_widget = self.reverb_mic_decrease_btn if direction < 0 else self.reverb_mic_increase_btn
-        
-        if not self._check_cooldown(button_name):
+        if self.is_action_in_progress:
             return
+
+        self.is_action_in_progress = True
         
-        self._set_cooldown(button_name, button_widget)
+        group_name = "reverb_mic"
+        if not self._check_cooldown(group_name):
+            self.is_action_in_progress = False
+            return
+
+        self._set_cooldown(group_name, [self.reverb_mic_decrease_btn, self.reverb_mic_increase_btn])
         self.main_window._adjust_reverb_mic_instant(direction)
-    
+
     def _toggle_mic_mute(self):
         """Toggle mute mic (Ctrl+M) trong Cubase."""
-        button_name = "mute_mic"
+        if self.is_action_in_progress:
+            return
+
+        self.is_action_in_progress = True
         
+        button_name = "mute_mic"
         if not self._check_cooldown(button_name):
+            self.is_action_in_progress = False
             return
         
-        self._set_cooldown(button_name, self.mute_mic_btn)
+        # <<< THAY ĐỔI: Sửa lỗi truyền tham số (cần là list)
+        self._set_cooldown(button_name, [self.mute_mic_btn])
         self.main_window._toggle_mic_mute()
-        

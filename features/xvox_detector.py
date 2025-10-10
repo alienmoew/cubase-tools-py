@@ -53,6 +53,11 @@ class XVoxDetector(BaseFeature):
         self.treble_default = self.default_values.get('treble_default', 0)
         self.current_treble = self.treble_default
         
+        self.LOW_REL_X_POS = 0.15  # LOW ở gần bên trái
+        self.LOW_REL_Y_POS = 0.90  # LOW ở giữa chiều dọc
+        self.HIGH_REL_X_POS = 0.60 # HIGH ở gần bên phải
+        self.HIGH_REL_Y_POS = 0.90 # HIGH ở giữa chiều dọc
+        
     def get_name(self):
         """Trả về tên hiển thị của detector."""
         return "XVox Controls"
@@ -347,18 +352,18 @@ class XVoxDetector(BaseFeature):
             time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print(f"🖱 Clicked on LOW text at {low_pos}")
             
-            # 6. Click ở vị trí chiều dọc 35% từ trên xuống (convert to absolute coordinates)
+            # 6. Click ở vị trí chiều dọc 10% từ trên xuống (convert to absolute coordinates)
             template_match = result['template_match']
             template_top = template_match['location'][1]  # Relative Y in plugin window
             template_height = template_match['template_size'][1]
             
             # Convert to absolute screen coordinates
-            click_y = plugin_win.top + template_top + (template_height * 0.35)
+            click_y = plugin_win.top + template_top + (template_height * 0.10)  # <<< THAY ĐỔI Ở ĐÂY
             click_x = low_pos[0]
             
             pyautogui.click(click_x, click_y)
             time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-            print(f"🖱 Clicked at 35% position: ({click_x}, {click_y})")
+            print(f"🖱 Clicked at 10% position: ({click_x}, {click_y})") # <<< THAY ĐỔI Ở ĐÂY
             
             # 7. Select text and input value
             pyautogui.tripleClick(click_x, click_y)
@@ -423,18 +428,18 @@ class XVoxDetector(BaseFeature):
             time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
             print(f"🖱 Clicked on HIGH text at {high_pos}")
             
-            # 6. Click ở vị trí chiều dọc 35% từ trên xuống (convert to absolute coordinates)
+            # 6. Click ở vị trí chiều dọc 10% từ trên xuống (convert to absolute coordinates)
             template_match = result['template_match']
             template_top = template_match['location'][1]  # Relative Y in plugin window
             template_height = template_match['template_size'][1]
             
             # Convert to absolute screen coordinates
-            click_y = plugin_win.top + template_top + (template_height * 0.35)
+            click_y = plugin_win.top + template_top + (template_height * 0.10)  # <<< THAY ĐỔI Ở ĐÂY
             click_x = high_pos[0]
             
             pyautogui.click(click_x, click_y)
             time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-            print(f"🖱 Clicked at 35% position: ({click_x}, {click_y})")
+            print(f"🖱 Clicked at 10% position: ({click_x}, {click_y})") # <<< THAY ĐỔI Ở ĐÂY
             
             # 7. Select text and input value
             pyautogui.tripleClick(click_x, click_y)
@@ -461,7 +466,10 @@ class XVoxDetector(BaseFeature):
             pyautogui.moveTo(original_pos[0], original_pos[1])
     
     def _find_tone_mic_template(self, xvox_window):
-        """Tìm tone mic template và OCR vùng đó để tìm LOW/HIGH trong XVox plugin (cải tiến)."""
+        """
+        Tìm vị trí LOW và HIGH trong XVox plugin bằng cách tính toán vị trí dựa trên template.
+        Phương pháp này nhanh, ổn định và không phụ thuộc vào OCR.
+        """
         try:
             # Lấy thông tin cửa sổ XVox
             x, y, w, h = xvox_window.left, xvox_window.top, xvox_window.width, xvox_window.height
@@ -472,23 +480,14 @@ class XVoxDetector(BaseFeature):
             screenshot_np = np.array(screenshot)
             screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2GRAY)
             
-            print(f"📐 XVox screenshot size: {w}x{h}")
-            
             # Load template
             template = cv2.imread(self.tone_mic_template_path, cv2.IMREAD_GRAYSCALE)
             if template is None:
                 print(f"❌ Cannot load tone mic template: {self.tone_mic_template_path}")
                 return None
                 
-            template_h, template_w = template.shape[:2]
-            print(f"📐 Tone Mic template size: {template_w}x{template_h}")
-            
             # Adaptive template matching
             best_result = TemplateHelper.adaptive_template_match(screenshot_gray, template)
-            
-            print(f"🏆 Tone Mic best method: {best_result['method']}")
-            print(f"🔍 Tone Mic confidence: {best_result['confidence']:.3f}")
-            print(f"📏 Tone Mic scale: {best_result['scale']:.2f}")
             
             if best_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
                 print(f"❌ Tone Mic template confidence too low: {best_result['confidence']:.3f}")
@@ -499,121 +498,21 @@ class XVoxDetector(BaseFeature):
             scaled_w, scaled_h = best_result['template_size']
             
             print(f"✅ Tone Mic template found at: ({match_x}, {match_y}) with size {scaled_w}x{scaled_h}")
+
+            # --- TÍNH TOÁN VỊ TRÍ LOW VÀ HIGH ---
+            print("🎯 Calculating LOW and HIGH positions...")
             
-            # Define OCR region (toàn bộ template area)
-            ocr_x, ocr_y = match_x, match_y
-            ocr_w, ocr_h = scaled_w, scaled_h
-            
-            print(f"📖 OCR region: ({ocr_x}, {ocr_y}, {ocr_w}x{ocr_h})")
-            
-            # Direct capture OCR region
-            absolute_ocr_x = x + ocr_x
-            absolute_ocr_y = y + ocr_y
-            ocr_region_pil = pyautogui.screenshot(region=(absolute_ocr_x, absolute_ocr_y, ocr_w, ocr_h))
-            
-            # Convert OCR region to grayscale
-            print("📖 Converting OCR region to grayscale...")
-            ocr_region_np = np.array(ocr_region_pil)
-            ocr_region_gray = cv2.cvtColor(ocr_region_np, cv2.COLOR_RGB2GRAY)
-            
-            # Convert back to PIL for OCR
-            from PIL import Image
-            ocr_region_gray_pil = Image.fromarray(ocr_region_gray, mode='L')
-            
-            print("📖 OCR on grayscale region...")
-            ocr_data = OCRHelper.extract_text_data(ocr_region_gray_pil)
-            words = OCRHelper.get_text_words(ocr_data)
-            print(f"📜 OCR text in tone mic region: {words}")
-            
-            # Tìm vị trí LOW và HIGH
-            low_pos = None
-            high_pos = None
-            low_index = -1  # Lưu index của LOW để tìm HIGH
-            
-            # Bước 1: Tìm vị trí LOW
-            for i, text in enumerate(ocr_data["text"]):
-                if text and text.strip():
-                    text_clean = text.strip().upper()
-                    
-                    if "LOW" in text_clean:
-                        # Tính vị trí absolute của LOW
-                        low_x = x + ocr_x + ocr_data["left"][i] + ocr_data["width"][i] // 2
-                        low_y = y + ocr_y + ocr_data["top"][i] + ocr_data["height"][i] // 2
-                        low_pos = (low_x, low_y)
-                        low_index = i
-                        print(f"🔉 Found LOW at index {i}: ({low_x}, {low_y})")
-                        break
-            
-            # Bước 2: Tìm vị trí HIGH
-            # 2a. Thử tìm trực tiếp từ OCR
-            for i, text in enumerate(ocr_data["text"]):
-                if text and text.strip():
-                    text_clean = text.strip().upper()
-                    
-                    if "HIGH" in text_clean:
-                        # Tính vị trí absolute của HIGH
-                        high_x = x + ocr_x + ocr_data["left"][i] + ocr_data["width"][i] // 2
-                        high_y = y + ocr_y + ocr_data["top"][i] + ocr_data["height"][i] // 2
-                        high_pos = (high_x, high_y)
-                        print(f"🔊 Found HIGH at index {i}: ({high_x}, {high_y})")
-                        break
-            
-            # 2b. Nếu không tìm thấy HIGH, sử dụng vị trí cách LOW hai đơn vị
-            if not high_pos and low_index >= 0:
-                # Theo log của bạn, HIGH cách LOW 2 đơn vị trong mảng
-                high_index = low_index + 2  # Vị trí cách LOW hai đơn vị
-                
-                # Kiểm tra xem index có hợp lệ không
-                if high_index < len(ocr_data["text"]):
-                    high_text = ocr_data["text"][high_index]
-                    if high_text and high_text.strip():
-                        # Tính vị trí absolute của HIGH (dựa vào vị trí cách LOW hai đơn vị)
-                        high_x = x + ocr_x + ocr_data["left"][high_index] + ocr_data["width"][high_index] // 2
-                        high_y = y + ocr_y + ocr_data["top"][high_index] + ocr_data["height"][high_index] // 2
-                        high_pos = (high_x, high_y)
-                        print(f"🔊 Found HIGH at index {high_index} (text: '{high_text}'): ({high_x}, {high_y})")
-                    else:
-                        print(f"⚠️ Text at position {high_index} is empty")
-                else:
-                    print(f"⚠️ Position {high_index} is out of range")
-            
-            # 2c. Nếu vẫn không tìm thấy, thử phương pháp dựa trên vị trí (fallback)
-            if not low_pos or not high_pos:
-                print("⚠️ Sử dụng phương pháp dựa trên vị trí (fallback)...")
-                
-                # Lọc ra các text có content
-                valid_texts = []
-                for i, text in enumerate(ocr_data["text"]):
-                    if text and text.strip():
-                        text_info = {
-                            'text': text.strip(),
-                            'index': i,
-                            'left': ocr_data["left"][i],
-                            'top': ocr_data["top"][i],
-                            'width': ocr_data["width"][i],
-                            'height': ocr_data["height"][i]
-                        }
-                        valid_texts.append(text_info)
-                
-                print(f"📝 Valid OCR texts: {[t['text'] for t in valid_texts]}")
-                
-                # Nếu có ít nhất 3 elements
-                if len(valid_texts) >= 3:
-                    # Element đầu tiên = LOW
-                    if not low_pos:
-                        low_info = valid_texts[0]
-                        low_x = x + ocr_x + low_info['left'] + low_info['width'] // 2
-                        low_y = y + ocr_y + low_info['top'] + low_info['height'] // 2
-                        low_pos = (low_x, low_y)
-                        print(f"🔉 Fallback LOW ('{low_info['text']}') at: ({low_x}, {low_y})")
-                    
-                    # Element thứ 3 = HIGH  
-                    if not high_pos:
-                        high_info = valid_texts[2]
-                        high_x = x + ocr_x + high_info['left'] + high_info['width'] // 2
-                        high_y = y + ocr_y + high_info['top'] + high_info['height'] // 2
-                        high_pos = (high_x, high_y)
-                        print(f"🔊 Fallback HIGH ('{high_info['text']}') at: ({high_x}, {high_y})")
+            # Tính toán vị trí LOW
+            low_x = x + match_x + int(scaled_w * self.LOW_REL_X_POS)
+            low_y = y + match_y + int(scaled_h * self.LOW_REL_Y_POS)
+            low_pos = (low_x, low_y)
+            print(f"🔉 LOW position calculated: ({low_x}, {low_y})")
+
+            # Tính toán vị trí HIGH
+            high_x = x + match_x + int(scaled_w * self.HIGH_REL_X_POS)
+            high_y = y + match_y + int(scaled_h * self.HIGH_REL_Y_POS)
+            high_pos = (high_x, high_y)
+            print(f"🔊 HIGH position calculated: ({high_x}, {high_y})")
             
             # Save debug image 
             debug_filename = "tone_mic_ocr_debug.png"
@@ -621,13 +520,12 @@ class XVoxDetector(BaseFeature):
                 screenshot_np, template, (match_x, match_y), 
                 best_result['confidence'], debug_filename
             )
-            print(f"🖼 Tone mic OCR debug saved -> {debug_path}")
+            print(f"🖼 Tone mic template debug saved -> {debug_path}")
             
             return {
                 'low_pos': low_pos,
                 'high_pos': high_pos,
-                'template_match': best_result,
-                'ocr_words': words
+                'template_match': best_result
             }
             
         except Exception as e:
@@ -683,16 +581,16 @@ class XVoxDetector(BaseFeature):
             print(f"❌ Could not find {target_text} position")
             return False
         
-        # Calculate click position (40% down from template top)
+        # Calculate click position (10% down from template top)
         template_top = template_match['location'][1]
         template_height = template_match['template_size'][1]
         
-        click_y = template_top + (template_height * 0.40)
+        click_y = template_top + (template_height * 0.10)  # <<< THAY ĐỔI Ở ĐÂY
         click_x = target_pos[0]
         
         pyautogui.click(click_x, click_y)
         time.sleep(0.05)  # Giảm từ 0.2 xuống 0.05
-        print(f"🖱 Clicked at 40% position: ({click_x}, {click_y})")
+        print(f"🖱 Clicked at 10% position: ({click_x}, {click_y})") # <<< THAY ĐỔI Ở ĐÂY
         
         # Select text and input value
         pyautogui.tripleClick(click_x, click_y)
@@ -723,3 +621,447 @@ class XVoxDetector(BaseFeature):
     def execute(self):
         """Execute XVox detection."""
         return self._find_xvox_window() is not None
+
+    # Thêm vào cuối class XVoxDetector trong file xvox_detector.py
+
+    # ==================== ULTRA OPTIMIZED BATCH RESET ====================
+    
+    def batch_reset_all_xvox_parameters(self, plugin_win, comp_value, reverb_value, bass_value, treble_value):
+        """
+        ULTRA OPTIMIZED: Reset tất cả XVox parameters với chỉ 1 lần OCR/CV cho tất cả.
+        Thực hiện template matching một lần cho tất cả controls, sau đó set value tuần tự.
+        """
+        try:
+            print("⚡ ULTRA OPTIMIZED: Batch reset all XVox parameters...")
+            
+            # Validate values
+            comp_value = max(self.comp_min, min(self.comp_max, int(comp_value)))
+            reverb_value = max(self.reverb_min, min(self.reverb_max, int(reverb_value)))
+            bass_value = max(self.bass_min, min(self.bass_max, int(bass_value)))
+            treble_value = max(self.treble_min, min(self.treble_max, int(treble_value)))
+            
+            # --- BƯỚC 1: Template matching MỘT LẦN cho tất cả controls ---
+            print("📸 Taking ONE screenshot and finding ALL templates...")
+            
+            # Screenshot plugin window một lần
+            x, y, w, h = plugin_win.left, plugin_win.top, plugin_win.width, plugin_win.height
+            screenshot = pyautogui.screenshot(region=(x, y, w, h))
+            screenshot_np = np.array(screenshot)
+            screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2GRAY)
+            
+            # Find COMP template
+            comp_template = cv2.imread(self.comp_template_path, cv2.IMREAD_GRAYSCALE)
+            comp_result = TemplateHelper.adaptive_template_match(screenshot_gray, comp_template)
+            if comp_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
+                print(f"❌ COMP template not found")
+                return False
+            comp_click_x = x + comp_result['location'][0] + comp_result['template_size'][0] // 2
+            comp_click_y = y + comp_result['location'][1] + comp_result['template_size'][1] // 2
+            print(f"✅ COMP found at ({comp_click_x}, {comp_click_y})")
+            
+            # Find Reverb template
+            reverb_template = cv2.imread(self.reverb_template_path, cv2.IMREAD_GRAYSCALE)
+            reverb_result = TemplateHelper.adaptive_template_match(screenshot_gray, reverb_template)
+            if reverb_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
+                print(f"❌ Reverb template not found")
+                return False
+            reverb_click_x = x + reverb_result['location'][0] + reverb_result['template_size'][0] // 2
+            reverb_click_y = y + reverb_result['location'][1] + reverb_result['template_size'][1] // 2
+            print(f"✅ Reverb found at ({reverb_click_x}, {reverb_click_y})")
+            
+            # Find Tone Mic template (for Bass & Treble)
+            tone_template = cv2.imread(self.tone_mic_template_path, cv2.IMREAD_GRAYSCALE)
+            tone_result = TemplateHelper.adaptive_template_match(screenshot_gray, tone_template)
+            if tone_result['confidence'] < config.TEMPLATE_MATCH_THRESHOLD:
+                print(f"❌ Tone Mic template not found")
+                return False
+            
+            # Calculate LOW and HIGH positions
+            match_x, match_y = tone_result['location']
+            scaled_w, scaled_h = tone_result['template_size']
+            low_x = x + match_x + int(scaled_w * self.LOW_REL_X_POS)
+            low_y = y + match_y + int(scaled_h * self.LOW_REL_Y_POS)
+            high_x = x + match_x + int(scaled_w * self.HIGH_REL_X_POS)
+            high_y = y + match_y + int(scaled_h * self.HIGH_REL_Y_POS)
+            
+            # Calculate click Y position (10% from top)
+            template_top = match_y
+            template_height = scaled_h
+            bass_click_y = y + template_top + int(template_height * 0.10)
+            treble_click_y = bass_click_y  # Same Y position
+            
+            print(f"✅ Bass (LOW) found at ({low_x}, {low_y}), click Y: {bass_click_y}")
+            print(f"✅ Treble (HIGH) found at ({high_x}, {high_y}), click Y: {treble_click_y}")
+            
+            # --- BƯỚC 2: Set values tuần tự (KHÔNG cần OCR/CV lại) ---
+            
+            # Set COMP
+            print(f"🎛️ Setting COMP to {comp_value}...")
+            pyautogui.click(comp_click_x, comp_click_y)
+            time.sleep(0.05)
+            time.sleep(0.2)
+            estimated_template_height = 100
+            template_top_y = comp_click_y - (estimated_template_height // 2)
+            top_click_y = template_top_y - 15
+            pyautogui.doubleClick(comp_click_x, top_click_y)
+            time.sleep(0.1)
+            pyautogui.typewrite(str(comp_value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.1)
+            self.current_comp = comp_value
+            print(f"✅ COMP set to {comp_value}")
+            
+            # Set Reverb
+            print(f"🌊 Setting Reverb to {reverb_value}...")
+            pyautogui.click(reverb_click_x, reverb_click_y)
+            time.sleep(0.05)
+            time.sleep(0.2)
+            template_top_y = reverb_click_y - (estimated_template_height // 2)
+            top_click_y = template_top_y - 15
+            pyautogui.doubleClick(reverb_click_x, top_click_y)
+            time.sleep(0.1)
+            pyautogui.typewrite(str(reverb_value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.1)
+            self.current_reverb = reverb_value
+            print(f"✅ Reverb set to {reverb_value}")
+            
+            # Set Bass
+            print(f"🔉 Setting Bass to {bass_value}...")
+            pyautogui.click(low_x, low_y)
+            time.sleep(0.05)
+            pyautogui.click(low_x, bass_click_y)
+            time.sleep(0.05)
+            pyautogui.tripleClick(low_x, bass_click_y)
+            time.sleep(0.05)
+            pyautogui.typewrite(str(bass_value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.05)
+            self.current_bass = bass_value
+            print(f"✅ Bass set to {bass_value}")
+            
+            # Set Treble
+            print(f"🔊 Setting Treble to {treble_value}...")
+            pyautogui.click(high_x, high_y)
+            time.sleep(0.05)
+            pyautogui.click(high_x, treble_click_y)
+            time.sleep(0.05)
+            pyautogui.tripleClick(high_x, treble_click_y)
+            time.sleep(0.05)
+            pyautogui.typewrite(str(treble_value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.05)
+            self.current_treble = treble_value
+            print(f"✅ Treble set to {treble_value}")
+            
+            print("✅ ULTRA OPTIMIZED: All XVox parameters set successfully!")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error in batch reset all XVox parameters: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    # ==================== INTERNAL METHODS FOR BATCH RESET ====================
+    # Các hàm mới nhận plugin_win từ bên ngoài (tối ưu hơn - không tìm window lại)
+    
+    def _batch_set_comp_value(self, plugin_win, value):
+        """Batch method to set COMP value with pre-found plugin window."""
+        value = max(self.comp_min, min(self.comp_max, int(value)))
+        try:
+            match_result = self._find_template_match(plugin_win, self.comp_template_path, "COMP")
+            if not match_result or match_result[0] is None:
+                return False
+            
+            result_data, _ = match_result
+            click_x, click_y = result_data['click_pos']
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            time.sleep(0.2)
+            
+            estimated_template_height = 100
+            template_top_y = click_y - (estimated_template_height // 2)
+            top_click_y = template_top_y - 15
+            pyautogui.doubleClick(click_x, top_click_y)
+            time.sleep(0.1)
+            
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.1)
+            
+            self.current_comp = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting COMP value: {e}")
+            return False
+
+    def _batch_set_reverb_value(self, plugin_win, value):
+        """Batch method to set Reverb value with pre-found plugin window."""
+        value = max(self.reverb_min, min(self.reverb_max, int(value)))
+        try:
+            match_result = self._find_template_match(plugin_win, self.reverb_template_path, "Reverb")
+            if not match_result or match_result[0] is None:
+                return False
+            
+            result_data, _ = match_result
+            click_x, click_y = result_data['click_pos']
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            time.sleep(0.2)
+            
+            estimated_template_height = 100
+            template_top_y = click_y - (estimated_template_height // 2)
+            top_click_y = template_top_y - 15
+            pyautogui.doubleClick(click_x, top_click_y)
+            time.sleep(0.1)
+            
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.1)
+            
+            self.current_reverb = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting Reverb value: {e}")
+            return False
+
+    def _batch_set_bass_value(self, plugin_win, value):
+        """Batch method to set Bass value with pre-found plugin window."""
+        value = max(self.bass_min, min(self.bass_max, int(value)))
+        try:
+            result = self._find_tone_mic_template(plugin_win)
+            if not result or not result.get('low_pos'):
+                return False
+            
+            low_pos = result['low_pos']
+            pyautogui.click(low_pos[0], low_pos[1])
+            time.sleep(0.05)
+            
+            template_match = result['template_match']
+            template_top = template_match['location'][1]
+            template_height = template_match['template_size'][1]
+            
+            click_y = plugin_win.top + template_top + (template_height * 0.10)
+            click_x = low_pos[0]
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.tripleClick(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.05)
+            
+            self.current_bass = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting Bass value: {e}")
+            return False
+
+    def _batch_set_treble_value(self, plugin_win, value):
+        """Batch method to set Treble value with pre-found plugin window."""
+        value = max(self.treble_min, min(self.treble_max, int(value)))
+        try:
+            result = self._find_tone_mic_template(plugin_win)
+            if not result or not result.get('high_pos'):
+                return False
+            
+            high_pos = result['high_pos']
+            pyautogui.click(high_pos[0], high_pos[1])
+            time.sleep(0.05)
+            
+            template_match = result['template_match']
+            template_top = template_match['location'][1]
+            template_height = template_match['template_size'][1]
+            
+            click_y = plugin_win.top + template_top + (template_height * 0.10)
+            click_x = high_pos[0]
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.tripleClick(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.05)
+            
+            self.current_treble = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting Treble value: {e}")
+            return False
+
+    # ==================== OLD INTERNAL METHODS (DEPRECATED) ====================
+    # Các hàm này không trả về vị trí chuột, dùng cho batch reset
+    # DEPRECATED: Sử dụng _batch_set_* thay thế
+
+    def _set_comp_value_no_restore(self, value):
+        """Internal method to set COMP value without restoring cursor."""
+        value = max(self.comp_min, min(self.comp_max, int(value)))
+        try:
+            proc = self._find_cubase_process()
+            if not proc: return False
+            if not self._focus_cubase_window(proc): return False
+            plugin_win = self._find_xvox_window()
+            if not plugin_win: return False
+            plugin_win.activate()
+            time.sleep(0.1)
+            
+            match_result = self._find_template_match(plugin_win, self.comp_template_path, "COMP")
+            if not match_result or match_result[0] is None: return False
+            
+            result_data, _ = match_result
+            click_x, click_y = result_data['click_pos']
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            time.sleep(0.2)
+            
+            estimated_template_height = 100
+            template_top_y = click_y - (estimated_template_height // 2)
+            top_click_y = template_top_y - 15
+            pyautogui.doubleClick(click_x, top_click_y)
+            time.sleep(0.1)
+            
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.1)
+            
+            self.current_comp = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting COMP value: {e}")
+            return False
+
+    def _set_reverb_value_no_restore(self, value):
+        """Internal method to set Reverb value without restoring cursor."""
+        value = max(self.reverb_min, min(self.reverb_max, int(value)))
+        try:
+            proc = self._find_cubase_process()
+            if not proc: return False
+            if not self._focus_cubase_window(proc): return False
+            plugin_win = self._find_xvox_window()
+            if not plugin_win: return False
+            plugin_win.activate()
+            time.sleep(0.1)
+            
+            match_result = self._find_template_match(plugin_win, self.reverb_template_path, "Reverb")
+            if not match_result or match_result[0] is None: return False
+            
+            result_data, _ = match_result
+            click_x, click_y = result_data['click_pos']
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            time.sleep(0.2)
+            
+            estimated_template_height = 100
+            template_top_y = click_y - (estimated_template_height // 2)
+            top_click_y = template_top_y - 15
+            pyautogui.doubleClick(click_x, top_click_y)
+            time.sleep(0.1)
+            
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.1)
+            
+            self.current_reverb = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting Reverb value: {e}")
+            return False
+
+    def _set_bass_value_no_restore(self, value):
+        """Internal method to set Bass value without restoring cursor."""
+        value = max(self.bass_min, min(self.bass_max, int(value)))
+        try:
+            proc = self._find_cubase_process()
+            if not proc: return False
+            if not self._focus_cubase_window(proc): return False
+            plugin_win = self._find_xvox_window()
+            if not plugin_win: return False
+            plugin_win.activate()
+            time.sleep(0.1)
+            
+            result = self._find_tone_mic_template(plugin_win)
+            if not result or not result.get('low_pos'): return False
+            
+            low_pos = result['low_pos']
+            pyautogui.click(low_pos[0], low_pos[1])
+            time.sleep(0.05)
+            
+            template_match = result['template_match']
+            template_top = template_match['location'][1]
+            template_height = template_match['template_size'][1]
+            
+            click_y = plugin_win.top + template_top + (template_height * 0.10)
+            click_x = low_pos[0]
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.tripleClick(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.05)
+            
+            self.current_bass = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting Bass value: {e}")
+            return False
+
+    def _set_treble_value_no_restore(self, value):
+        """Internal method to set Treble value without restoring cursor."""
+        value = max(self.treble_min, min(self.treble_max, int(value)))
+        try:
+            proc = self._find_cubase_process()
+            if not proc: return False
+            if not self._focus_cubase_window(proc): return False
+            plugin_win = self._find_xvox_window()
+            if not plugin_win: return False
+            plugin_win.activate()
+            time.sleep(0.1)
+            
+            result = self._find_tone_mic_template(plugin_win)
+            if not result or not result.get('high_pos'): return False
+            
+            high_pos = result['high_pos']
+            pyautogui.click(high_pos[0], high_pos[1])
+            time.sleep(0.05)
+            
+            template_match = result['template_match']
+            template_top = template_match['location'][1]
+            template_height = template_match['template_size'][1]
+            
+            click_y = plugin_win.top + template_top + (template_height * 0.10)
+            click_x = high_pos[0]
+            
+            pyautogui.click(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.tripleClick(click_x, click_y)
+            time.sleep(0.05)
+            pyautogui.typewrite(str(value))
+            time.sleep(0.05)
+            pyautogui.press('enter')
+            time.sleep(0.05)
+            
+            self.current_treble = value
+            return True
+        except Exception as e:
+            print(f"❌ Error setting Treble value: {e}")
+            return False

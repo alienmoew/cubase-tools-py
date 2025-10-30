@@ -59,7 +59,7 @@ class MainWindow:
         # Create root window
         self.root = CTK.CTk()
         self.root.title(f"{config.APP_NAME} {config.APP_VERSION}")
-        self.root.geometry("1000x320")  # Increased height for larger fonts
+        self.root.geometry("300x620")  # Compact size for 1360x768 screens
         self.root.resizable(False, False)
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
         icon_path = os.path.join(base_path, "icon.ico")
@@ -132,29 +132,30 @@ class MainWindow:
         """Thiết lập UI với component-based architecture."""
         # Main container
         main_frame = CTK.CTkFrame(self.root, fg_color="transparent")
-        main_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        main_frame.pack(fill="both", expand=True, padx=3, pady=3)
 
         # Content frame cho 3 sections
         content_frame = CTK.CTkFrame(main_frame, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=2, pady=2)
+        content_frame.pack(fill="both", expand=True, padx=1, pady=1)
 
-        # Configure grid layout - 3 columns
+        # Configure grid layout - 3 rows (vertical layout)
+        content_frame.grid_rowconfigure(0, weight=1)
+        content_frame.grid_rowconfigure(1, weight=1)
+        content_frame.grid_rowconfigure(2, weight=1)
         content_frame.grid_columnconfigure(0, weight=1)
-        content_frame.grid_columnconfigure(1, weight=1)
-        content_frame.grid_columnconfigure(2, weight=1)
 
-        # Create components
+        # Create components (vertical layout)
         self.autotune_section = AutoTuneSection(content_frame, self)
         autotune_container = self.autotune_section.create()
-        autotune_container.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
+        autotune_container.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
 
         self.music_section = MusicSection(content_frame, self)
         music_container = self.music_section.create()
-        music_container.grid(row=0, column=1, sticky="nsew", padx=2, pady=2)
+        music_container.grid(row=1, column=0, sticky="nsew", padx=1, pady=1)
 
         self.vocal_section = VocalSection(content_frame, self)
         vocal_container = self.vocal_section.create()
-        vocal_container.grid(row=0, column=2, sticky="nsew", padx=2, pady=2)
+        vocal_container.grid(row=2, column=0, sticky="nsew", padx=1, pady=1)
 
         # Footer
         self.footer = Footer(self.root, self)

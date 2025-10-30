@@ -38,14 +38,14 @@ class AutoTuneSection(BaseComponent):
     def create(self):
         """Tạo Auto-Tune section với tất cả controls."""
         # Section frame - minimal padding
-        self.container = CTK.CTkFrame(self.parent, corner_radius=6, border_width=1, border_color="#404040")
+        self.container = CTK.CTkFrame(self.parent, corner_radius=4, border_width=1, border_color="#404040")
         
         # Header với title và toggle
         self._create_header()
         
         # Content frame - minimal
         content_frame = CTK.CTkFrame(self.container, fg_color="transparent")
-        content_frame.pack(fill="both", expand=True, padx=4, pady=(0, 4))
+        content_frame.pack(fill="both", expand=True, padx=2, pady=(0, 2))
         
         # Tone detection
         self._create_tone_detection(content_frame)
@@ -57,82 +57,82 @@ class AutoTuneSection(BaseComponent):
     
     def _create_header(self):
         """Tạo header với title và bypass toggle."""
-        header_frame = CTK.CTkFrame(self.container, fg_color="#1E1E1E", corner_radius=4)
-        header_frame.pack(fill="x", padx=4, pady=4)
+        header_frame = CTK.CTkFrame(self.container, fg_color="#1E1E1E", corner_radius=3)
+        header_frame.pack(fill="x", padx=2, pady=2)
         
         # Title
         title_label = CTK.CTkLabel(
             header_frame,
             text="Auto-Tune",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 11, "bold"),
             text_color="#FFFFFF"
         )
-        title_label.pack(side="left", padx=8, pady=4)
+        title_label.pack(side="left", padx=5, pady=2)
         
         # Auto-Tune Toggle (right side)
         toggle_container = CTK.CTkFrame(header_frame, fg_color="transparent")
-        toggle_container.pack(side="right", padx=8)
+        toggle_container.pack(side="right", padx=5)
         
         self.plugin_bypass_toggle = CTK.CTkSwitch(
             toggle_container,
             text="",
             command=lambda: self.main_window.bypass_manager.toggle_bypass('plugin'),
-            width=35,
-            height=18,
+            width=30,
+            height=16,
             fg_color="#666666",
             progress_color="#4CAF50"
         )
-        self.plugin_bypass_toggle.pack(side="left", padx=(0, 5))
+        self.plugin_bypass_toggle.pack(side="left", padx=(0, 3))
         
         self.plugin_state_label = CTK.CTkLabel(
             toggle_container,
             text="ON",
-            font=("Arial", 9, "bold"),
+            font=("Arial", 8, "bold"),
             text_color="#4CAF50",
-            width=25
+            width=20
         )
         self.plugin_state_label.pack(side="left")
     
     def _create_tone_detection(self, parent):
         """Tạo tone detection controls với màu xanh lá."""
-        tone_row = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color="#4CAF50")
-        tone_row.pack(fill="x", pady=2, padx=4)
+        tone_row = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=3, border_width=1, border_color="#4CAF50")
+        tone_row.pack(fill="x", pady=1, padx=2)
         
         # Top row: Label + Key value
         top_row = CTK.CTkFrame(tone_row, fg_color="transparent")
-        top_row.pack(fill="x", pady=(4, 2), padx=8)
+        top_row.pack(fill="x", pady=(2, 1), padx=4)
         
         # Label ở bên trái với dấu hai chấm
         tone_title = CTK.CTkLabel(
             top_row,
             text="Tone hiện tại:",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 9, "bold"),
             text_color="#81C784"
         )
-        tone_title.pack(side="left", padx=(0, 4))
+        tone_title.pack(side="left", padx=(0, 3))
         
         # Giá trị Key ở bên phải label
         self.current_tone_label = CTK.CTkLabel(
             top_row,
             text="--",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 11, "bold"),
             text_color="#EF5350",
-            width=50
+            width=40
         )
         self.current_tone_label.pack(side="left")
         
         # Bottom row: Dò tone button (left) + Tự động dò switch (right)
         bottom_row = CTK.CTkFrame(tone_row, fg_color="transparent")
-        bottom_row.pack(fill="x", pady=(2, 4), padx=8)
+        bottom_row.pack(fill="x", pady=(1, 2), padx=4)
         
         # Dò tone button ở bên trái
         btn_tone = CTK.CTkButton(
             bottom_row,
             text="Dò tone",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 9, "bold"),
             command=self._execute_tone_detector,
-            width=80,
-            height=26,
+            width=65,
+            height=22,
             fg_color="#388E3C",
             hover_color="#2E7D32"
         )
@@ -143,9 +143,9 @@ class AutoTuneSection(BaseComponent):
             bottom_row,
             text="Tự động dò",
             command=self._toggle_auto_detect,
-            width=40,
-            height=18,
-            font=("Arial", 10),
+            width=35,
+            height=16,
+            font=("Arial", 8),
             fg_color="#666666",
             progress_color="#4CAF50"
         )
@@ -161,8 +161,8 @@ class AutoTuneSection(BaseComponent):
     
     def _create_music_presets(self, parent):
         """Tạo music presets controls với bố cục dọc."""
-        presets_frame = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=4)
-        presets_frame.pack(fill="x", pady=2, padx=4)
+        presets_frame = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=3)
+        presets_frame.pack(fill="x", pady=1, padx=2)
         
         # Bolero (Trên)
         self._create_bolero_preset(presets_frame)
@@ -178,21 +178,21 @@ class AutoTuneSection(BaseComponent):
     
     def _create_preset_base(self, parent, preset_name, border_color, music_type):
         """Hàm tạo preset cơ bản để tái sử dụng code."""
-        container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=4, border_width=2, border_color=border_color)
-        container.pack(fill="x", pady=(0, 3), padx=6)
+        container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=3, border_width=1, border_color=border_color)
+        container.pack(fill="x", pady=(0, 2), padx=3)
         
         # Bind click event để apply preset khi click vào container
         container.bind("<Button-1>", lambda e: self._apply_preset_on_click(music_type))
         
         # Header frame với title và level display
         header_frame = CTK.CTkFrame(container, fg_color="transparent")
-        header_frame.pack(pady=(4, 2), padx=6, fill="x")
+        header_frame.pack(pady=(2, 1), padx=3, fill="x")
         
         # Title text instead of button (bên trái)
         title_label = CTK.CTkLabel(
             header_frame,
             text=preset_name,
-            font=("Arial", 11, "bold"),
+            font=("Arial", 9, "bold"),
             text_color="#FFFFFF"
         )
         title_label.pack(side="left")
@@ -201,50 +201,50 @@ class AutoTuneSection(BaseComponent):
         level_label = CTK.CTkLabel(
             header_frame,
             text="0",
-            font=("Arial", 10, "bold"),
+            font=("Arial", 8, "bold"),
             text_color="#9FA8DA",
-            width=25
+            width=20
         )
         level_label.pack(side="right")
         
         # Button frame với các nút điều khiển
         button_frame = CTK.CTkFrame(container, fg_color="transparent")
-        button_frame.pack(pady=(0, 5), padx=6)
+        button_frame.pack(pady=(0, 2), padx=3)
         
         # Giảm button
         minus_btn = CTK.CTkButton(
             button_frame,
             text="Giảm",
-            font=("Arial", 10, "bold"),
+            font=("Arial", 8, "bold"),
             command=lambda: self._adjust_and_apply_preset(music_type, -1),
-            width=45,
-            height=24,
+            width=38,
+            height=20,
             fg_color="#303F9F",
             hover_color="#283593"
         )
-        minus_btn.pack(side="left", padx=(0, 3))
+        minus_btn.pack(side="left", padx=(0, 2))
         
         # Bình thường button
         normal_btn = CTK.CTkButton(
             button_frame,
             text="Bình thường",
-            font=("Arial", 10, "bold"),
+            font=("Arial", 8, "bold"),
             command=lambda: self._reset_preset_level(music_type),
-            width=75,
-            height=24,
+            width=65,
+            height=20,
             fg_color="#303F9F",
             hover_color="#283593"
         )
-        normal_btn.pack(side="left", padx=(0, 3))
+        normal_btn.pack(side="left", padx=(0, 2))
         
         # Tăng button
         plus_btn = CTK.CTkButton(
             button_frame,
             text="Tăng",
-            font=("Arial", 10, "bold"),
+            font=("Arial", 8, "bold"),
             command=lambda: self._adjust_and_apply_preset(music_type, 1),
-            width=45,
-            height=24,
+            width=38,
+            height=20,
             fg_color="#303F9F",
             hover_color="#283593"
         )

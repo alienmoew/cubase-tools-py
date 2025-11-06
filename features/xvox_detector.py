@@ -14,17 +14,20 @@ from utils.helpers import ImageHelper, TemplateHelper, MessageHelper, MouseHelpe
 class XVoxDetector(BaseFeature):
     """Tính năng điều chỉnh tất cả controls của XVox plugin."""
     
-    def __init__(self):
+    def __init__(self, plugin_name="XVox", template_suffix=""):
         super().__init__()
         self.feature_name = "XVox Controls"
+        self.plugin_name = plugin_name  # Lưu tên plugin để tìm đúng cửa sổ
+        self.template_suffix = template_suffix  # Suffix cho template riêng (vd: "_comp", "_space", "_tone")
         
         # Setup Tesseract for OCR (like original)
         OCRHelper.setup_tesseract()
         
-        # Template paths
-        self.comp_template_path = config.TEMPLATE_PATHS['comp_template']
-        self.reverb_template_path = config.TEMPLATE_PATHS['reverb_template'] 
-        self.tone_mic_template_path = config.TEMPLATE_PATHS['tone_mic_template']
+        # Template paths - có thể dùng template riêng cho mỗi plugin
+        # Nếu có template với suffix thì dùng, không thì dùng template chung
+        self.comp_template_path = self._get_template_path('comp_template', template_suffix)
+        self.reverb_template_path = self._get_template_path('reverb_template', template_suffix)
+        self.tone_mic_template_path = self._get_template_path('tone_mic_template', template_suffix)
         
         # Load default values
         self.default_values = ConfigHelper.load_default_values()
@@ -57,6 +60,39 @@ class XVoxDetector(BaseFeature):
         self.LOW_REL_Y_POS = 0.90  # LOW ở giữa chiều dọc
         self.HIGH_REL_X_POS = 0.60 # HIGH ở gần bên phải
         self.HIGH_REL_Y_POS = 0.90 # HIGH ở giữa chiều dọc
+    
+    def _get_template_path(self, base_name, suffix=""):
+        """
+        Lấy đường dẫn template, ưu tiên template có suffix nếu có.
+        
+        Args:
+            base_name: Tên template cơ bản (vd: 'comp_template')
+            suffix: Suffix cho plugin riêng (vd: '_comp', '_space', '_tone')
+            
+        Returns:
+            str: Đường dẫn đến template file
+            
+        Example:
+            - Nếu suffix='_comp', sẽ tìm 'comp_template_comp.png' trước
+            - Nếu không có, fallback về 'comp_template.png'
+        """
+        import os
+        
+        if suffix:
+            # Thử tìm template với suffix trước
+            suffix_template_name = f"{base_name}{suffix}"
+            if suffix_template_name in config.TEMPLATE_PATHS:
+                template_path = config.TEMPLATE_PATHS[suffix_template_name]
+                if os.path.exists(template_path):
+                    print(f"🎯 Using custom template: {suffix_template_name}")
+                    return template_path
+        
+        # Fallback về template chung
+        if base_name in config.TEMPLATE_PATHS:
+            return config.TEMPLATE_PATHS[base_name]
+        
+        # Fallback cuối cùng - path trực tiếp
+        return f"templates/{base_name}.png"
         
     def get_name(self):
         """Trả về tên hiển thị của detector."""
@@ -72,22 +108,21 @@ class XVoxDetector(BaseFeature):
         return proc
     
     def _find_xvox_window(self):
-        """Tìm cửa sổ XVox plugin."""
+        """Tìm cửa sổ XVox plugin dựa trên plugin_name."""
         from utils.window_manager import WindowManager
         import pygetwindow as gw
         
-        # Try different possible window titles for XVox
-        possible_titles = ["Xvox", "XVOX", "xvox", "X-Vox", "X_Vox", "XVox", "X Vox"]
+        # Tìm chính xác theo tên plugin đã chỉ định
+        print(f"🔍 Searching for plugin: {self.plugin_name}")
+        plugin_win = WindowManager.find_window_containing(self.plugin_name)
         
-        for title in possible_titles:
-            plugin_win = WindowManager.find_window(title)
-            if plugin_win:
-                print(f"✅ Found XVox window: {title}")
-                return plugin_win
+        if plugin_win:
+            print(f"✅ Found {self.plugin_name} window: {plugin_win.title}")
+            return plugin_win
         
         # Debug: Print all available windows
-        print("❌ XVox plugin window not found")
-        print("💡 Searching for windows containing 'vox' or 'x-vox'...")
+        print(f"❌ {self.plugin_name} plugin window not found")
+        print("💡 Searching for windows containing 'vox'...")
         all_windows = gw.getAllWindows()
         vox_windows = [w for w in all_windows if 'vox' in w.title.lower()]
         
@@ -98,7 +133,7 @@ class XVoxDetector(BaseFeature):
         else:
             print("💡 No windows with 'vox' in title found")
         
-        print("💡 Make sure XVox plugin is open and visible")
+        print(f"💡 Make sure {self.plugin_name} plugin is open and visible")
         return None
     
     def _focus_cubase_window(self, proc):
@@ -207,6 +242,15 @@ class XVoxDetector(BaseFeature):
             result_data, confidence = match_result
             click_x, click_y = result_data['click_pos']
             
+            # Điều chỉnh vị trí click X: 70% từ bên trái thay vì center (50%)
+            template_match = result_data['template_match']
+            template_width = template_match['template_size'][0]
+            template_left_x = result_data['click_pos'][0] - (template_width // 2)  # Tính X của cạnh trái template
+            click_x = template_left_x + int(template_width * 0.70)  # 70% từ trái
+            
+            print(f"📐 Template width: {template_width}px")
+            print(f"📍 Adjusted click position: 70% from left = ({click_x}, {click_y})")
+            
             # 6. Perform COMP action
             print(f"👆 Clicking COMP center: ({click_x}, {click_y})")
             pyautogui.click(click_x, click_y)
@@ -215,11 +259,14 @@ class XVoxDetector(BaseFeature):
             print("⏰ Waiting 0.2s...")  # Giảm từ 0.5s xuống 0.2s
             time.sleep(0.2)
             
-            # Click above template for input field
-            estimated_template_height = 100
-            template_top_y = click_y - (estimated_template_height // 2)
-            top_click_y = template_top_y - 15
-            print(f"👆 Double clicking above template: ({click_x}, {top_click_y})")
+            # Click #2: Cao hơn 45% chiều cao template so với click #1
+            template_height = template_match['template_size'][1]
+            offset_y = int(template_height * 0.45)  # 45% chiều cao template
+            top_click_y = click_y - offset_y  # Lên cao hơn click đầu tiên
+            
+            print(f"📐 Template height: {template_height}px")
+            print(f"📍 Double click position: 45% higher = ({click_x}, {top_click_y}) [offset: -{offset_y}px]")
+            print(f"👆 Double clicking above COMP: ({click_x}, {top_click_y})")
             pyautogui.doubleClick(click_x, top_click_y)
             time.sleep(0.1)  # Giảm từ 0.2 xuống 0.1
             
@@ -277,18 +324,37 @@ class XVoxDetector(BaseFeature):
             result_data, confidence = match_result
             click_x, click_y = result_data['click_pos']
             
+            # Điều chỉnh vị trí click: 30% từ trái, 60% từ trên xuống
+            template_match = result_data['template_match']
+            template_width = template_match['template_size'][0]
+            template_height = template_match['template_size'][1]
+            
+            # Tính vị trí top-left của template
+            template_left_x = result_data['click_pos'][0] - (template_width // 2)
+            template_top_y = result_data['click_pos'][1] - (template_height // 2)
+            
+            # Click X: 30% từ trái
+            click_x = template_left_x + int(template_width * 0.30)
+            # Click Y: 60% từ trên xuống
+            click_y = template_top_y + int(template_height * 0.60)
+            
+            print(f"📐 Template size: {template_width}x{template_height}px")
+            print(f"📍 Adjusted click position: 30% from left, 60% from top = ({click_x}, {click_y})")
+            
             # 6. Perform Reverb action (similar to COMP)
-            print(f"👆 Clicking Reverb center: ({click_x}, {click_y})")
+            print(f"👆 Clicking Reverb: ({click_x}, {click_y})")
             pyautogui.click(click_x, click_y)
             time.sleep(0.05)  # Giảm từ 0.1 xuống 0.05
             
             print("⏰ Waiting 0.2s...")  # Giảm từ 0.5s xuống 0.2s
             time.sleep(0.2)
             
-            estimated_template_height = 100
-            template_top_y = click_y - (estimated_template_height // 2)
-            top_click_y = template_top_y - 15
-            print(f"👆 Double clicking above template: ({click_x}, {top_click_y})")
+            # Click #2: Cao hơn 35% chiều cao template so với click #1 (thấp hơn COMP)
+            offset_y = int(template_height * 0.25)  # 35% chiều cao template
+            top_click_y = click_y - offset_y  # Lên cao hơn click đầu tiên
+            
+            print(f"📍 Double click position: 35% higher = ({click_x}, {top_click_y}) [offset: -{offset_y}px]")
+            print(f"👆 Double clicking above Reverb: ({click_x}, {top_click_y})")
             pyautogui.doubleClick(click_x, top_click_y)
             time.sleep(0.1)  # Giảm từ 0.2 xuống 0.1
             

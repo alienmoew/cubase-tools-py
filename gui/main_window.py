@@ -88,7 +88,16 @@ class MainWindow:
         self.soundshifter_detector = SoundShifterDetector()
         self.soundshifter_bypass_detector = SoundShifterBypassDetector()
         self.proq3_bypass_detector = ProQ3BypassDetector()
-        self.xvox_detector = XVoxDetector()
+        
+        # XVox detectors - Tách thành 3 plugin riêng
+        # Template suffix: "_comp", "_space", "_tone" (nếu cần template riêng cho mỗi plugin)
+        # Nếu không có template riêng, sẽ tự động fallback về template chung
+        self.xvox_comp_detector = XVoxDetector(plugin_name="XVox Comp", template_suffix="_comp")
+        self.xvox_space_detector = XVoxDetector(plugin_name="XVox Space", template_suffix="_space")
+        self.xvox_tone_detector = XVoxDetector(plugin_name="XVox Tone", template_suffix="_tone")
+        
+        # Giữ lại detector mặc định để tương thích ngược (nếu có code cũ)
+        self.xvox_detector = self.xvox_comp_detector
 
         # System Volume Detector (Windows Audio Session)
         app_name = self.default_values.get(
@@ -121,7 +130,10 @@ class MainWindow:
         # Plugin window references (for auto-minimize after actions)
         self.autokey_win = None
         self.autotune_win = None
-        self.xvox_win = None
+        # XVox - 3 plugin riêng biệt
+        self.xvox_comp_win = None
+        self.xvox_space_win = None
+        self.xvox_tone_win = None
         self.soundshifter_win = None
         self.proq3_win = None
 
@@ -202,15 +214,33 @@ class MainWindow:
             print(f"✅ AUTO-TUNE PRO plugin found: {autotune_win.title}")
             self.autotune_win = autotune_win  # Save reference
 
-        # Check XVox
-        print("\n🔍 Checking XVox...")
-        xvox_win = WindowManager.find_window_containing("vox")
-        if not xvox_win:
-            missing_plugins.append("XVox")
-            print("❌ XVox plugin not found")
+        # Check XVox - 3 plugin riêng biệt
+        print("\n🔍 Checking XVox Comp...")
+        xvox_comp_win = WindowManager.find_window_containing("XVox Comp")
+        if not xvox_comp_win:
+            missing_plugins.append("XVox Comp")
+            print("❌ XVox Comp plugin not found")
         else:
-            print(f"✅ XVox plugin found: {xvox_win.title}")
-            self.xvox_win = xvox_win  # Save reference
+            print(f"✅ XVox Comp plugin found: {xvox_comp_win.title}")
+            self.xvox_comp_win = xvox_comp_win
+
+        print("\n🔍 Checking XVox Space...")
+        xvox_space_win = WindowManager.find_window_containing("XVox Space")
+        if not xvox_space_win:
+            missing_plugins.append("XVox Space")
+            print("❌ XVox Space plugin not found")
+        else:
+            print(f"✅ XVox Space plugin found: {xvox_space_win.title}")
+            self.xvox_space_win = xvox_space_win
+
+        print("\n🔍 Checking XVox Tone...")
+        xvox_tone_win = WindowManager.find_window_containing("XVox Tone")
+        if not xvox_tone_win:
+            missing_plugins.append("XVox Tone")
+            print("❌ XVox Tone plugin not found")
+        else:
+            print(f"✅ XVox Tone plugin found: {xvox_tone_win.title}")
+            self.xvox_tone_win = xvox_tone_win
 
         # Check SoundShifter
         print("\n🔍 Checking SoundShifter...")
@@ -247,11 +277,15 @@ class MainWindow:
             # Minimize all plugins except AUTO-KEY
             print("\n🔽 Minimizing plugins (keeping AUTO-KEY visible)...")
             self._minimize_all_plugins_except_autokey(
-                autokey_win, autotune_win, xvox_win, soundshifter_win, proq3_win
+                autokey_win, autotune_win, 
+                xvox_comp_win, xvox_space_win, xvox_tone_win,
+                soundshifter_win, proq3_win
             )
 
 
-    def _minimize_all_plugins_except_autokey(self, autokey_win, autotune_win, xvox_win, soundshifter_win, proq3_win):
+    def _minimize_all_plugins_except_autokey(self, autokey_win, autotune_win, 
+                                             xvox_comp_win, xvox_space_win, xvox_tone_win,
+                                             soundshifter_win, proq3_win):
         """Minimize tất cả plugin trừ AUTO-KEY, và minimize Cubase window."""
         import win32gui
         import win32con
@@ -294,7 +328,9 @@ class MainWindow:
         # 🔽 Minimize other plugins
         plugins_to_minimize = [
             ("AUTO-TUNE PRO", autotune_win),
-            ("XVox", xvox_win),
+            ("XVox Comp", xvox_comp_win),
+            ("XVox Space", xvox_space_win),
+            ("XVox Tone", xvox_tone_win),
             ("SoundShifter", soundshifter_win),
             ("ProQ3", proq3_win)
         ]
@@ -322,6 +358,9 @@ class MainWindow:
 
     def _minimize_plugins_after_action(self):
         """Minimize tất cả plugin trừ AUTO-KEY sau khi thực hiện action."""
+        # TEMPORARY: Tạm thời tắt auto-minimize để debug/test
+        return
+        
         try:
             from utils.window_manager import WindowManager
             from utils.process_finder import CubaseProcessFinder
@@ -350,7 +389,9 @@ class MainWindow:
             # Minimize plugins (using saved references)
             plugins = [
                 ("AUTO-TUNE PRO", self.autotune_win),
-                ("XVox", self.xvox_win),
+                ("XVox Comp", self.xvox_comp_win),
+                ("XVox Space", self.xvox_space_win),
+                ("XVox Tone", self.xvox_tone_win),
                 ("SoundShifter", self.soundshifter_win),
                 ("ProQ3", self.proq3_win)
             ]
@@ -753,8 +794,8 @@ class MainWindow:
 
             print(f"🎚️ Adjusting Bass to: {new_value} (step: {step})")
 
-            # Áp dụng ngay lập tức
-            success = self.xvox_detector.set_bass_value(new_value)
+            # Áp dụng ngay lập tức - Sử dụng XVox Tone detector
+            success = self.xvox_tone_detector.set_bass_value(new_value)
 
             if success:
                 print(f"✅ Bass applied successfully: {new_value}")
@@ -791,8 +832,8 @@ class MainWindow:
 
             print(f"🎚️ Adjusting Treble to: {new_value} (step: {step})")
 
-            # Áp dụng ngay lập tức
-            success = self.xvox_detector.set_treble_value(new_value)
+            # Áp dụng ngay lập tức - Sử dụng XVox Tone detector
+            success = self.xvox_tone_detector.set_treble_value(new_value)
 
             if success:
                 print(f"✅ Treble applied successfully: {new_value}")
@@ -830,8 +871,8 @@ class MainWindow:
 
             print(f"🎚️ Adjusting Volume Mic to: {new_value} (step: {step})")
 
-            # Áp dụng ngay lập tức
-            success = self.xvox_detector.set_comp_value(new_value)
+            # Áp dụng ngay lập tức - Sử dụng XVox Comp detector
+            success = self.xvox_comp_detector.set_comp_value(new_value)
 
             if success:
                 print(f"✅ Volume Mic applied successfully: {new_value}")
@@ -869,8 +910,8 @@ class MainWindow:
 
             print(f"🎚️ Adjusting Reverb Mic to: {new_value} (step: {step})")
 
-            # Áp dụng ngay lập tức
-            success = self.xvox_detector.set_reverb_value(new_value)
+            # Áp dụng ngay lập tức - Sử dụng XVox Space detector
+            success = self.xvox_space_detector.set_reverb_value(new_value)
 
             if success:
                 print(f"✅ Reverb Mic applied successfully: {new_value}")

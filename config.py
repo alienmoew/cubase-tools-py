@@ -134,7 +134,12 @@ TEMPLATE_PATHS = {
     'flex_tune_template': get_template_path('flex_tune_template.png'),
     'natural_vibrato_template': get_template_path('natural_vibrato_template.png'),
     'humanize_template': get_template_path('humanize_template.png'),
-    'soundshifter_pitch_template': get_template_path('soundshifter_pitch_template.png')
+    'soundshifter_pitch_template': get_template_path('soundshifter_pitch_template.png'),
+    
+    # XVox plugin-specific templates - Mapped to actual filenames
+    'comp_template_comp': get_template_path('xvox_comp_template.png'),        # XVox Comp
+    'reverb_template_space': get_template_path('xvox_space_template.png'),    # XVox Space
+    'tone_mic_template_tone': get_template_path('xvox_tone_template.png')     # XVox Tone
 }
 
 # UI Settings

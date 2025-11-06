@@ -160,15 +160,19 @@ class AutoTuneSection(BaseComponent):
             self.main_window.root.after_idle(lambda: self.main_window._start_auto_detect_from_saved_state())   
     
     def _create_music_presets(self, parent):
-        """Tạo music presets controls với bố cục dọc."""
+        """Tạo music presets controls với bố cục ngang (side by side)."""
         presets_frame = CTK.CTkFrame(parent, fg_color="#2B2B2B", corner_radius=3)
         presets_frame.pack(fill="x", pady=1, padx=2)
         
-        # Bolero (Trên)
-        self._create_bolero_preset(presets_frame)
+        # Configure grid for 2 columns
+        presets_frame.grid_columnconfigure(0, weight=1)
+        presets_frame.grid_columnconfigure(1, weight=1)
         
-        # Nhạc Trẻ (Dưới)
-        self._create_nhac_tre_preset(presets_frame)
+        # Bolero (Bên trái)
+        self._create_bolero_preset(presets_frame, column=0)
+        
+        # Nhạc Trẻ (Bên phải)
+        self._create_nhac_tre_preset(presets_frame, column=1)
         
         # Update initial display
         self._update_music_preset_display('bolero')
@@ -176,91 +180,92 @@ class AutoTuneSection(BaseComponent):
         # Reset highlight ban đầu
         self._highlight_active_preset(None)
     
-    def _create_preset_base(self, parent, preset_name, border_color, music_type):
+    def _create_preset_base(self, parent, preset_name, border_color, music_type, column=0):
         """Hàm tạo preset cơ bản để tái sử dụng code."""
         container = CTK.CTkFrame(parent, fg_color="#1E1E1E", corner_radius=3, border_width=1, border_color=border_color)
-        container.pack(fill="x", pady=(0, 2), padx=3)
+        container.grid(row=0, column=column, sticky="nsew", padx=2, pady=2)
         
         # Bind click event để apply preset khi click vào container
         container.bind("<Button-1>", lambda e: self._apply_preset_on_click(music_type))
         
-        # Header frame với title và level display
+        # Header frame với title và level display - compact
         header_frame = CTK.CTkFrame(container, fg_color="transparent")
-        header_frame.pack(pady=(2, 1), padx=3, fill="x")
+        header_frame.pack(pady=(1, 0), padx=2, fill="x")
         
-        # Title text instead of button (bên trái)
+        # Title text instead of button (bên trái) - smaller font
         title_label = CTK.CTkLabel(
             header_frame,
             text=preset_name,
-            font=("Arial", 9, "bold"),
+            font=("Arial", 8, "bold"),
             text_color="#FFFFFF"
         )
         title_label.pack(side="left")
         
-        # Level display (bên phải)
+        # Level display (bên phải) - smaller
         level_label = CTK.CTkLabel(
             header_frame,
             text="0",
-            font=("Arial", 8, "bold"),
+            font=("Arial", 7, "bold"),
             text_color="#9FA8DA",
-            width=20
+            width=16
         )
         level_label.pack(side="right")
         
-        # Button frame với các nút điều khiển
+        # Button frame với các nút điều khiển - vertical layout để tiết kiệm không gian
         button_frame = CTK.CTkFrame(container, fg_color="transparent")
-        button_frame.pack(pady=(0, 2), padx=3)
+        button_frame.pack(pady=(1, 1), padx=2, fill="x")
         
-        # Giảm button
+        # Row 1: Giảm và Tăng
+        row1 = CTK.CTkFrame(button_frame, fg_color="transparent")
+        row1.pack(fill="x", pady=(0, 1))
+        
         minus_btn = CTK.CTkButton(
-            button_frame,
+            row1,
             text="Giảm",
-            font=("Arial", 8, "bold"),
+            font=("Arial", 7, "bold"),
             command=lambda: self._adjust_and_apply_preset(music_type, -1),
-            width=38,
-            height=20,
+            width=60,
+            height=18,
             fg_color="#303F9F",
             hover_color="#283593"
         )
-        minus_btn.pack(side="left", padx=(0, 2))
+        minus_btn.pack(side="left", expand=True, padx=(0, 1))
         
-        # Bình thường button
+        plus_btn = CTK.CTkButton(
+            row1,
+            text="Tăng",
+            font=("Arial", 7, "bold"),
+            command=lambda: self._adjust_and_apply_preset(music_type, 1),
+            width=60,
+            height=18,
+            fg_color="#303F9F",
+            hover_color="#283593"
+        )
+        plus_btn.pack(side="left", expand=True)
+        
+        # Row 2: Bình thường (full width)
         normal_btn = CTK.CTkButton(
             button_frame,
             text="Bình thường",
-            font=("Arial", 8, "bold"),
+            font=("Arial", 7, "bold"),
             command=lambda: self._reset_preset_level(music_type),
-            width=65,
-            height=20,
+            height=18,
             fg_color="#303F9F",
             hover_color="#283593"
         )
-        normal_btn.pack(side="left", padx=(0, 2))
-        
-        # Tăng button
-        plus_btn = CTK.CTkButton(
-            button_frame,
-            text="Tăng",
-            font=("Arial", 8, "bold"),
-            command=lambda: self._adjust_and_apply_preset(music_type, 1),
-            width=38,
-            height=20,
-            fg_color="#303F9F",
-            hover_color="#283593"
-        )
-        plus_btn.pack(side="left")
+        normal_btn.pack(fill="x")
         
         return container, level_label, minus_btn, normal_btn, plus_btn, title_label
     
-    def _create_bolero_preset(self, parent):
+    def _create_bolero_preset(self, parent, column=0):
         """Tạo Bolero preset controls với màu hồng."""
         self.bolero_container, self.bolero_level_label, self.bolero_minus_btn, self.bolero_normal_btn, self.bolero_plus_btn, self.bolero_title_label = self._create_preset_base(
-            parent, "Bolero", "#3F51B5", "bolero")
+            parent, "Bolero", "#3F51B5", "bolero", column)
     
-    def _create_nhac_tre_preset(self, parent):
+    def _create_nhac_tre_preset(self, parent, column=1):
         """Tạo Nhạc Trẻ preset controls với màu xanh tím/indigo."""
         self.nhac_tre_container, self.nhac_tre_level_label, self.nhac_tre_minus_btn, self.nhac_tre_normal_btn, self.nhac_tre_plus_btn, self.nhac_tre_title_label = self._create_preset_base(
-            parent, "Nhạc Trẻ", "#3F51B5", "nhac_tre")
+            parent, "Nhạc Trẻ", "#3F51B5", "nhac_tre", column)
     
     # ==================== EVENT HANDLERS ====================
     def _reset_preset_level(self, music_type):
